@@ -12,13 +12,17 @@ edgerep(A, B)
 \item{B}{An adjacency matrix of network B}
 }
 \value{
-Returns the number of edges that replicate
+Returns a list of the number of edges that replicate (Replicated), total number of edges (Possible), the percentage of edges that replicate (Percentage), the density of edges (Density), the mean difference between edges that replicate (MeanDifference), the sd of the difference between edges that replicate (SdDifference), and the correlation between the edges that replicate for both networks (Correlation)
 }
 \description{
 Computes the number of edges that replicate between two cross-sectional networks
 }
 \examples{
-numberofedges<-edgerep(A,B)
+A<-TMFG(hex)$A
+
+B<-MaST(hex)
+
+edges<-edgerep(A,B)
 }
 \author{
 Alexander Christensen <alexpaulchristensen@gmail.com>

@@ -4,7 +4,7 @@
 \alias{MaST}
 \title{Maximum Spanning Tree}
 \usage{
-MaST(data, binary = FALSE, weighted = TRUE)
+MaST(data, binary = FALSE, weighted = TRUE, depend = FALSE)
 }
 \arguments{
 \item{data}{Can be a dataset or a correlation matrix}
@@ -12,6 +12,8 @@ MaST(data, binary = FALSE, weighted = TRUE)
 \item{binary}{Is dataset dichotomous? Defaults to FALSE. Set TRUE if dataset is dichotomous (tetrachoric correlations are computed)}
 
 \item{weighted}{Should network be weighted? Defaults to TRUE. Set FALSE to produce an unweighted (binary) network}
+
+\item{depend}{Is network a dependency (or directed) network? Defaults to FALSE. Set TRUE to generate a MaST-filtered dependency network}
 }
 \value{
 A sparse association matrix
@@ -20,16 +22,16 @@ A sparse association matrix
 Applies the Maximum Spanning Tree (MaST) filtering method
 }
 \examples{
-weighted_MaSTnetwork<-MaST(data)
+weighted_MaSTnetwork<-MaST(hex)
 
-weighted_binary_MaSTnetwork<-MaST(data,binary=TRUE)
+weighted_binary_MaSTnetwork<-MaST(hexb,binary=TRUE)
 
-unweighted_MaSTnetwork<-MaST(data,weighted=FALSE)
+unweighted_MaSTnetwork<-MaST(hex,weighted=FALSE)
 
-unweighted_binary_MaSTnetwork<-MaST(data,binary=TRUE,weighted=FALSE)
+unweighted_binary_MaSTnetwork<-MaST(hexb,binary=TRUE,weighted=FALSE)
 }
 \references{
-Adapted from: <https://www.mathworks.com/matlabcentral/fileexchange/23276-maximum-weight-spanning-tree--undirected>
+Adapted from: \url{https://www.mathworks.com/matlabcentral/fileexchange/23276-maximum-weight-spanning-tree--undirected}
 }
 \author{
 Alexander Christensen <alexpaulchristensen@gmail.com>

@@ -4,7 +4,7 @@
 \alias{TMFG}
 \title{Triangulated Maximally Filtered Graph}
 \usage{
-TMFG(data, binary = FALSE, weighted = TRUE)
+TMFG(data, binary = FALSE, weighted = TRUE, depend = FALSE)
 }
 \arguments{
 \item{data}{Can be a dataset or a correlation matrix}
@@ -12,26 +12,28 @@ TMFG(data, binary = FALSE, weighted = TRUE)
 \item{binary}{Is dataset dichotomous? Defaults to FALSE. Set TRUE if dataset is dichotomous (tetrachoric correlations are computed)}
 
 \item{weighted}{Should network be weighted? Defaults to TRUE. Set FALSE to produce an unweighted (binary) network}
+
+\item{depend}{Is network a dependency (or directed) network? Defaults to FALSE. Set TRUE to generate a TMFG-filtered dependency network}
 }
 \value{
-A sparse association matrix
+Returns a list of the adjacency matrix (A), separators (separators), and cliques (cliques)
 }
 \description{
 Applies the Triangulated Maximally Filtered Graph (TMFG) filtering method
 }
 \examples{
-weighted_TMFGnetwork<-TMFG(data)
+weighted_TMFGnetwork<-TMFG(hex)
 
-weighted_binary_TMFGnetwork<-TMFG(data,binary=TRUE)
+weighted_binary_TMFGnetwork<-TMFG(hexb,binary=TRUE)
 
-unweighted_TMFGnetwork<-TMFG(data,weighted=FALSE)
+unweighted_TMFGnetwork<-TMFG(hex,weighted=FALSE)
 
-unweighted_binary_TMFGnetwork<-TMFG(data,binary=TRUE,weighted=FALSE)
+unweighted_binary_TMFGnetwork<-TMFG(hexb,binary=TRUE,weighted=FALSE)
 }
 \references{
 Massara, G. P., Di Matteo, T., & Aste, T. (2016).
 Network filtering for big data: Triangulated maximally filtered graph.
-Journal of Complex Networks, 5(2), 161-178.
+\emph{Journal of Complex Networks}, \emph{5}(2), 161-178.
 }
 \author{
 Alexander Christensen <alexpaulchristensen@gmail.com>
