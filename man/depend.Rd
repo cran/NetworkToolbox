@@ -4,14 +4,27 @@
 \alias{depend}
 \title{Dependency Matrix}
 \usage{
-depend(data, binary = FALSE, index = FALSE, progBar = TRUE)
+depend(data, normal = FALSE, na.data = c("pairwise", "listwise", "fiml"),
+  index = FALSE, fisher = FALSE, progBar = TRUE)
 }
 \arguments{
-\item{data}{A set of data}
+\item{data}{A set of data (missing data is handled using the Full Information Maximum Likelihood function \emph{corFiml} in the \emph{psych} package)}
 
-\item{binary}{Is dataset dichotomous? Defaults to FALSE. Set TRUE if dataset is dichotomous (tetrachoric correlations are computed)}
+\item{normal}{Should data be transform to a normal distribution?
+Defaults to FALSE. Data is not transformed to be normal.
+Set to TRUE if data should be transformed to be normal
+(computes correlations using the \emph{cor_auto} fucntion from the \emph{qgraph} package)}
+
+\item{na.data}{How should missing data be handled?
+For "pairwise" deletion \emph{na.rm} is applied.
+If normal is TRUE, then "pairwise" is used.
+For "listwise" deletion the \emph{na.omit} fucntion is applied.
+Set to "fiml" for Full Information Maxmimum Likelihood (\emph{psych} package).
+Full Information Maxmimum Likelihood is \strong{recommended} but time consuming}
 
 \item{index}{Should correlation with the latent variable (i.e., weighted average of all variables) be removed? Defaults to FALSE. Set to TRUE to remove common latent factor}
+
+\item{fisher}{Should Fisher's Z-test be used to keep significantly higher influences (index only)? Defaults to FALSE. Set to TRUE to remove non-significant influences}
 
 \item{progBar}{Should progress bar be displayed? Defaults to TRUE. Set FALSE for no progress bar.}
 }
@@ -19,13 +32,12 @@ depend(data, binary = FALSE, index = FALSE, progBar = TRUE)
 Returns an adjacency matrix of dependencies
 }
 \description{
-Generates a dependency matrix of the data
+Generates a dependency matrix of the data (index argument is still in testing phase)
 }
 \examples{
 D<-depend(hex)
 
-binaryD<-depend(hexb,binary=TRUE)
-
+Dindex<-depend(hex,index=TRUE)
 }
 \references{
 Kenett, D. Y., Tumminello, M., Madi, A., Gur-Gershgoren, G., Mantegna, R. N., & Ben-Jacob, E. (2010).

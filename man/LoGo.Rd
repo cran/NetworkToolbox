@@ -4,25 +4,35 @@
 \alias{LoGo}
 \title{Local/Global Sparse Inverse Covariance Matrix}
 \usage{
-LoGo(data, separators = TMFG(data)$separators, cliques = TMFG(data)$cliques)
+LoGo(data, normal = FALSE, na.data = c("pairwise", "listwise", "fiml"))
 }
 \arguments{
 \item{data}{Must be a dataset}
 
-\item{separators}{Defaults to separators obtained from the TMFG function. Requires a list of separators}
+\item{normal}{Should data be transform to a normal distribution?
+Defaults to FALSE. Data is not transformed to be normal.
+Set to TRUE if data should be transformed to be normal
+(computes correlations using the \emph{cor_auto} fucntion from the \emph{qgraph} package)}
 
-\item{cliques}{Defaults to cliques obtained from the TMFG function. Requires a list of cliques}
+\item{na.data}{How should missing data be handled?
+For "pairwise" deletion \emph{na.rm} is applied.
+For "listwise" deletion the \emph{na.omit} fucntion is applied.
+Set to "fiml" for Full Information Maxmimum Likelihood (\emph{psych} package).
+Full Information Maxmimum Likelihood is \strong{recommended} but time consuming}
 }
 \value{
-Returns a sparse TMFG-filtered matrix of the inverse covariance
+Returns a sparse TMFG-filtered inverse covariance matrix
+(can be converted to a zero-order partial correlation matrix using the \emph{-cov2cor} function; see examples)
 }
 \description{
-Applies the Local/Global method to estimate the sparse inverse covariance matrix
+Applies the Local/Global method to estimate the sparse inverse covariance matrix using a TMFG-filtered network
+(see and cite Barfuss et al., 2016)
 }
 \examples{
-
 LoGonet<-LoGo(hex)
 
+corrLoGonet<-(-cov2cor(LoGonet))
+diag(corrLoGonet)<-0
 }
 \references{
 Barfuss, W., Massara, G. P., Di Matteo, T., & Aste, T. (2016).

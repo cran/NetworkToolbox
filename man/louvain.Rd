@@ -4,16 +4,19 @@
 \alias{louvain}
 \title{Louvain Community Detection Algorithm}
 \usage{
-louvain(A, gamma = 1, M0 = 1:ncol(A), method = "modularity")
+louvain(A, gamma, M0, method = c("modularity", "potts"))
 }
 \arguments{
 \item{A}{An adjacency matrix of network data}
 
-\item{gamma}{Defaults to 1. Set to gamma > 1 to detect smaller modules and gamma < 1 for larger modules}
+\item{gamma}{Defaults to 1.
+Set to gamma > 1 to detect smaller modules and gamma < 1 for larger modules}
 
-\item{M0}{Defaults to none. Input can be an initial community vector}
+\item{M0}{Input can be an initial community vector.
+Defaults to none}
 
-\item{method}{Defaults to "modularity". Set to "potts" for Potts model}
+\item{method}{Defaults to "modularity".
+Set to "potts" for Potts model}
 }
 \value{
 Returns a list of community and Q
@@ -25,7 +28,6 @@ Computes a vector of communities (community) and a global modularity measure (Q)
 A<-TMFG(hex)$A
 
 modularity<-louvain(A)
-
 }
 \references{
 Blondel, V. D., Guillaume, J. L., Lambiotte, R., & Lefebvre, E. (2008).

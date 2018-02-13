@@ -9,13 +9,15 @@ distance(A, weighted = FALSE)
 \arguments{
 \item{A}{An adjacency matrix of network data}
 
-\item{weighted}{Is the network weighted? Defaults to FALSE. Set to TRUE for weighted measure of distance}
+\item{weighted}{Is the network weighted?
+Defaults to FALSE.
+Set to TRUE for weighted measure of distance}
 }
 \value{
 A distance matrix of the network
 }
 \description{
-Computes distance matrix of the network (Weighted not coded)
+Computes distance matrix of the network
 }
 \examples{
 A<-TMFG(hex)$A

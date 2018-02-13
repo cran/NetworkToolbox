@@ -4,30 +4,48 @@
 \alias{commboot}
 \title{Bootstrapped Communities Likelihood}
 \usage{
-commboot(data, binary = FALSE, n = nrow(data), iter = 100,
-  method = "louvain", steps = 4)
+commboot(data, normal = FALSE, n = nrow(data), iter = 100,
+  filter = c("TMFG", "threshold"), method = c("louvain", "walktrap"),
+  na.data = c("pairwise", "listwise", "fiml"), steps = 4, ...)
 }
 \arguments{
 \item{data}{A set of data}
 
-\item{binary}{Is dataset dichotomous? Defaults to FALSE. Set TRUE if dataset is dichotomous (tetrachoric correlations are computed)}
+\item{normal}{Should data be transform to a normal distribution?
+Defaults to FALSE. Data is not transformed to be normal.
+Set to TRUE if data should be transformed to be normal}
 
 \item{n}{Number of people to use in the bootstrap. Defaults to full sample size}
 
 \item{iter}{Number of bootstrap iterations. Defaults to 100 iterations}
 
+\item{filter}{Set filter method. Defaults to "TMFG"}
+
 \item{method}{Defaults to "louvain". Set to "walktrap" for the walktrap algorithm}
 
+\item{na.data}{How should missing data be handled?
+For "pairwise" deletion \emph{na.rm} is applied.
+If normal is TRUE, then "pairwise" is used.
+For "listwise" deletion the \emph{na.omit} fucntion is applied.
+Set to "fiml" for Full Information Maxmimum Likelihood (\emph{psych} package).
+Full Information Maxmimum Likelihood is \strong{recommended} but time consuming}
+
 \item{steps}{Number of steps to use in the walktrap algorithm. Defaults to 4. Use a larger number of steps for smaller networks}
+
+\item{...}{Additional arguments for network filtering methods}
 }
 \value{
 The factors and their proportion found across bootstrapped samples (i.e., their likelihood)
 }
 \description{
-Bootstraps the sample with replace to compute walktrap reliability (TMFG-filtered networks only)
+Bootstraps the sample with replace to compute walktrap reliability (still in testing phase)
 }
 \examples{
+\dontrun{
 commTMFG<-commboot(hex)
+
+commThreshold<-commboot(hex,filter="threshold")
+}
 }
 \references{
 Blondel, V. D., Guillaume, J. L., Lambiotte, R., & Lefebvre, E. (2008).
