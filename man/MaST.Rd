@@ -5,7 +5,7 @@
 \title{Maximum Spanning Tree}
 \usage{
 MaST(data, normal = FALSE, weighted = TRUE, depend = FALSE,
-  na.data = c("pairwise", "listwise", "fiml"))
+  na.data = c("pairwise", "listwise", "fiml", "none"))
 }
 \arguments{
 \item{data}{Can be a dataset or a correlation matrix}
@@ -38,10 +38,10 @@ A sparse association matrix
 Applies the Maximum Spanning Tree (MaST) filtering method
 }
 \examples{
-weighted_MaSTnetwork<-MaST(hex)
+weighted_MaSTnetwork<-MaST(neoOpen)
 
 
-unweighted_MaSTnetwork<-MaST(hex,weighted=FALSE)
+unweighted_MaSTnetwork<-MaST(neoOpen,weighted=FALSE)
 
 }
 \references{

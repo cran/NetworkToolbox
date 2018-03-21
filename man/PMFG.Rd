@@ -4,11 +4,15 @@
 \alias{PMFG}
 \title{Planar Maximally Filtered Graph}
 \usage{
-PMFG(data, normal = FALSE, weighted = TRUE, na.data = c("pairwise",
-  "listwise", "fiml"), progBar = TRUE)
+PMFG(data, sparseList = FALSE, normal = FALSE, weighted = TRUE,
+  na.data = c("pairwise", "listwise", "fiml", "none"), progBar = TRUE)
 }
 \arguments{
 \item{data}{Can be a dataset or a correlation matrix}
+
+\item{sparseList}{Should a sparse matrix be returned?
+Defaults to FALSE.
+Set to TRUE to return a sparse matrix list}
 
 \item{normal}{Should data be transform to a normal distribution?
 Defaults to FALSE. Data is not transformed to be normal.
@@ -31,7 +35,8 @@ Defaults to TRUE.
 Set to FALSE for no progress bar}
 }
 \value{
-Returns a PMFG-filtered associaton matrix
+Returns a list of PMFG-filtered associaton matrix (pmfg).
+If \emph{sparseList} = TRUE, then the list will contain a sparse list (List)
 }
 \description{
 Applies the Planar Maximally Filtered Graph (PMFG) filtering method
@@ -40,7 +45,7 @@ Currently very slow! (efficiency updates soon to come)
 }
 \examples{
 \dontrun{
-weighted_PMFGnetwork<-PMFG(hex)
+weighted_PMFGnetwork<-PMFG(neoOpen)
 }
 }
 \references{
