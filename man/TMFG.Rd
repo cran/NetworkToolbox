@@ -5,15 +5,17 @@
 \title{Triangulated Maximally Filtered Graph}
 \usage{
 TMFG(data, normal = FALSE, weighted = TRUE, depend = FALSE,
-  partial = FALSE, na.data = c("pairwise", "listwise", "fiml", "none"))
+  na.data = c("pairwise", "listwise", "fiml", "none"))
 }
 \arguments{
 \item{data}{Can be a dataset or a correlation matrix}
 
-\item{normal}{Should data be transform to a normal distribution?
-Defaults to FALSE. Data is not transformed to be normal.
+\item{normal}{Should data be transformed to a normal distribution?
+Input must be a dataset.
+Defaults to FALSE.
+Data is not transformed to be normal.
 Set to TRUE if data should be transformed to be normal
-(computes correlations using the \emph{cor_auto} fucntion from the \emph{qgraph} package)}
+(computes correlations using the \emph{cor_auto} function from the \emph{qgraph} package)}
 
 \item{weighted}{Should network be weighted?
 Defaults to TRUE.
@@ -24,19 +26,13 @@ Defaults to FALSE.
 Set to TRUE to generate a TMFG-filtered dependency network
 (output obtained from the \emph{depend} function)}
 
-\item{partial}{Should partial correlations between two nodes given all other nodes be used?
-Defaults to FALSE.
-Set to TRUE to generate a network of fully regressed coefficients.}
-
 \item{na.data}{How should missing data be handled?
-For "pairwise" deletion \emph{na.rm} is applied.
-For "listwise" deletion the \emph{na.omit} fucntion is applied.
+For "listwise" deletion the \emph{na.omit} function is applied.
 Set to "fiml" for Full Information Maxmimum Likelihood (\emph{psych} package).
 Full Information Maxmimum Likelihood is \strong{recommended} but time consuming}
 }
 \value{
-Returns a list of the adjacency matrix (A), separators (separators), and cliques (cliques).
-If partial = TRUE, then shrinkage lambda is also output (lambda)
+Returns a list of the adjacency matrix (A), separators (separators), and cliques (cliques)
 }
 \description{
 Applies the Triangulated Maximally Filtered Graph (TMFG) filtering method

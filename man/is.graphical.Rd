@@ -4,15 +4,13 @@
 \alias{is.graphical}
 \title{Determines if Network is Graphical}
 \usage{
-is.graphical(A, data)
+is.graphical(A)
 }
 \arguments{
 \item{A}{A partial correlation network (adjacency matrix)}
-
-\item{data}{The dataset the correlation matrix is from}
 }
 \value{
-Returns a covariance matrix
+Returns a TRUE/FALSE for whether network is graphical
 }
 \description{
 Tests for whether the network is graphical.
@@ -20,9 +18,9 @@ Input must be a partial correlation network.
 Function assumes that partial correlations were computed from a multivariate normal distribution
 }
 \examples{
-A <- TMFG(neoOpen, normal = TRUE, partial = TRUE)$A
+A <- LoGo(neoOpen, normal = TRUE, partial = TRUE)$logo
 
-is.graphical(A, neoOpen)
+is.graphical(A)
 }
 \author{
 Alexander Christensen <alexpaulchristensen@gmail.com>
