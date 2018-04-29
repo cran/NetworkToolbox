@@ -1,11 +1,41 @@
+Changes in version 1.1.2
+
+o bootgen: ensures graphical model for method = "LoGo"
+
+o nams: adjusted algorithm
+
+o sim.swn: added a function to simulate small-world networks and data
+
+o PMFG: removed function due to inefficiency
+
+o diversity: added a function to compute the diversity coefficient of nodes in the network
+
+o gateway: added a function to compute the gateway coefficient of nodes in the network
+
+o participation: added a function to compute the participation coefficient of nodes in the network
+
+o edgerep: fixed bug in plot to display the strength of the replicated edges only and will display diagonal if diagonals are equivalent between the two matrices
+
+o nams: added output for an overall network adjusted mean/sum score
+
+o improved documentation
+
+o added EBICglasso and Isingfit to bootgen and commboot function
+
+o added back the kld and rmse function
+
+o added network visualization of canonical and macro-scale region connectivity to cpmIV function
+
+o LoGo: no longer outputs a list (only a matrix) and added a standardize argument for inverse correlation matrix as output (does not change partial correlation output)
+
+
 Changes in Version 1.1.1
 
 o LoGo: reversed sign bug fixed; cov.shrink no longer used for covariance matrix estimation
 
 o is.graphical: updated with more efficient (inverse) covariance check
 
-o bootgen: uses partial correlation significance from method = "LoGo"
-
+o bootgen: uses partial correlation significance for method = "LoGo"
 
 
 Changes in Version 1.1.0

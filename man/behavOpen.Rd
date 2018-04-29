@@ -12,10 +12,12 @@ data(behavOpen)
 NEO-PI-3 Openness to Experience associated with resting-state data (\emph{n} = 144).
 }
 \details{
-Behavioral data of NEO-PI-3 associated with each connectivity matrix (open)
+Behavioral data of NEO-PI-3 associated with each connectivity matrix (open).
+
+To access the resting-state brain data, please go to \url{https://drive.google.com/file/d/1ugwi7nRrlHQYuGPzEB4wYzsizFrIMvKR/view}
 }
 \examples{
-data(behavOpen)
+data("behavOpen")
 }
 \references{
 Beaty, R. E., Chen, Q., Christensen, A. P., Qiu, J., Silvia, P. J., & Schacter, D. L. (2018).

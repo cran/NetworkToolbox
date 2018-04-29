@@ -4,9 +4,9 @@
 \alias{nams}
 \title{Network Adjusted Mean/Sum}
 \usage{
-nams(data, A, adjusted = c("mean", "sum"), factors = c("walktrap",
-  "louvain"), standardize = TRUE, method = c("TMFG", "LoGo", "PMFG",
-  "threshold", "none"), normal = FALSE, na.data = c("pairwise", "listwise",
+nams(data, A, normal = FALSE, standardize = TRUE, adjusted = c("mean",
+  "sum"), factors = c("walktrap", "louvain"), method = c("TMFG", "LoGo",
+  "EBICglasso", "IsingFit", "threshold"), na.data = c("pairwise", "listwise",
   "fiml", "none"), ...)
 }
 \arguments{
@@ -14,37 +14,35 @@ nams(data, A, adjusted = c("mean", "sum"), factors = c("walktrap",
 
 \item{A}{Adjacency matrix that has already been filtered}
 
-\item{adjusted}{Should adjusted values be the mean or sum score?
-Defaults to "mean".
-Set to "sum" for sum scores}
-
-\item{factors}{Can be a vector of factor assignments or community detection algorithms
-("walktrap" or "louvain") can be used to determine the number of factors
-(note that these factors must be at least 9 nodes or more for the TMFG method).
-Defaults to 1 factor.
-Set to "walktrap" for the walktrap algortihm.
-Set to "louvain" for louvain community detection}
+\item{normal}{Should data be transformed to a normal distribution?
+Defaults to FALSE.
+Data is not transformed to be normal.
+Set to TRUE if data should be transformed to be normal
+(computes correlations using the \link[qgraph]{cor_auto} function)}
 
 \item{standardize}{Should mean/sum scores be standardized?
 Defaults to TRUE.
 Set to FALSE for unstandardized mean/sum scores}
 
+\item{adjusted}{Should adjusted values be the mean or sum score?
+Defaults to "mean".
+Set to "sum" for sum scores}
+
+\item{factors}{Can be a vector of factor assignments or community detection algorithms
+("walktrap" or "louvain") can be used to determine the number of factors.
+Defaults to 1 factor.
+Set to "walktrap" for the walktrap algortihm.
+Set to "louvain" for louvain community detection}
+
 \item{method}{A network filtering method.
 Defaults to "TMFG".
 The "threshold" option is set to the default arguments (thresh = "alpha", a = .05).
 To use additional arguments for "threshold", apply \emph{threshold} function with
-desired arguments and set to "none".
-Use "none" for an adjacency matrix that has already been filtered}
-
-\item{normal}{Should data be transformed to a normal distribution?
-Defaults to FALSE.
-Data is not transformed to be normal.
-Set to TRUE if data should be transformed to be normal
-(computes correlations using the \emph{cor_auto} function from the \emph{qgraph} package)}
+desired arguments and input into argument \strong{A}}
 
 \item{na.data}{How should missing data be handled?
-For "listwise" deletion the \emph{na.omit} function is applied.
-Set to "fiml" for Full Information Maxmimum Likelihood (\emph{psych} package).
+For "listwise" deletion the \code{\link{na.omit}} function is applied.
+Set to "fiml" for Full Information Maxmimum Likelihood (\link[psych]{corFiml}).
 Full Information Maxmimum Likelihood is \strong{recommended} but time consuming}
 
 \item{...}{Additional arguments for community detection algorithms}
@@ -55,15 +53,15 @@ and the items associated with the specified or identified factors (FactorItems)
 }
 \description{
 The hybrid centrality is used to adjust the mean or sum score of participant's factor scores based on each node's centrality.
-Each participant's response values are multipled by the corresponding hybrid centrality value (uses "average" for BC argument).
+Each participant's response values are multipled by the corresponding hybrid centrality value (uses "random" for BC argument).
 In this way, more central nodes contribute a greater score and less central nodes contribute a lesser score
 }
 \examples{
 
 sumadj <- nams(neoOpen, adjusted = "sum")
 
-knownfactors <- nams(neoOpen, method = "threshold",
-factors = c(rep(1,6),rep(2,6),rep(3,6),rep(4,6),rep(5,6),rep(6,6)))
+knownfactors <- nams(neoOpen,
+factors = c(rep(1,8),rep(2,8),rep(3,8),rep(4,8),rep(5,8),rep(6,8)))
 
 walkadj <- nams(neoOpen, method="threshold", factors = "walktrap")
 
