@@ -4,8 +4,8 @@
 \alias{comcat}
 \title{Communicating Nodes}
 \usage{
-comcat(A, comm = c("walktrap", "louvain"), cent = c("strength", "degree"),
-  ...)
+comcat(A, comm = c("walktrap", "louvain"), cent = c("strength",
+  "degree"), ...)
 }
 \arguments{
 \item{A}{An adjacency matrix of network data}

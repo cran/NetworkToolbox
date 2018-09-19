@@ -1,3 +1,13 @@
+Changes in version 1.2.1
+
+o updated comm.close algorithm: takes the reciprocal of the mean ASPL of each community
+
+o LoGo: removed some arguments, added "..." for deprecated arguments (e.g., standardize)
+
+o rep.resp: function to detect repetitive responding
+
+
+
 Changes in version 1.2.0
 
 o net.coverage: a function to examine the coverage of a subset of nodes in the network

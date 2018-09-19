@@ -17,15 +17,13 @@
 #' Set to "walktrap" for the walktrap algortihm.
 #' Set to "louvain" for louvain community detection
 #' 
-#' @param standardize Should mean/sum scores be standardized?
-#' Defaults to TRUE.
-#' Set to FALSE for unstandardized mean/sum scores
-#' 
 #' @param ... Additional arguments for community detection algorithms
 #' 
 #' @return Returns a list containing:
 #' 
-#' \item{NetAdjScore}{The network adjusted score}
+#' \item{Standardized}{The standardized network adjusted score for each participant}
+#' 
+#' \item{Unstandardized}{The unstandardized network adjusted score (mean or sum) for each participant}
 #' 
 #' \item{CommItems}{The items associated with the specified or identified communities}
 #' 
@@ -54,7 +52,7 @@
 #' 
 #' @export
 #Network Adjusted Mean/Sum----
-nams <- function (data, A, standardize = TRUE,
+nams <- function (data, A,
                   adjusted = c("mean","sum"),
                   comm = c("walktrap","louvain"), ...)
 {
@@ -165,10 +163,10 @@ nams <- function (data, A, standardize = TRUE,
             }
     }
     
-    if(standardize)
-    {fact <- scale(fact)}
+    std_fact <- scale(fact)
+    fact <- as.data.frame(fact)
+    std_fact <- as.data.frame(std_fact)
     
-    fact<-as.data.frame(fact)
     
     for(l in 1:nrow(data))
     {row.names(fact)[l]<-paste("Part",l,sep="")}
@@ -189,7 +187,10 @@ nams <- function (data, A, standardize = TRUE,
     }else{
         colnames(fact)<-"overall"
         corr <- 1
-        }
+    }
+    
+    colnames(std_fact) <- colnames(fact)
+    row.names(std_fact) <- row.names(fact)
     
     matf<-matrix(0,nrow=len,ncol=2)
     
@@ -201,6 +202,6 @@ nams <- function (data, A, standardize = TRUE,
     matf<-as.data.frame(matf)
     colnames(matf)<-c("Community","Items")
     
-    return(list(NetAdjScore=fact,CommItems=matf,CommCor=corr))
+    return(list(Standardized=std_fact,Unstandardized=fact,CommItems=matf,CommCor=corr))
 }
 #----

@@ -4,7 +4,7 @@
 \alias{comm.close}
 \title{Community Closeness Centrality}
 \usage{
-comm.close(A, comm, weighted = TRUE)
+comm.close(A, comm, weighted = FALSE)
 }
 \arguments{
 \item{A}{An adjacency matrix of network data}
@@ -13,8 +13,8 @@ comm.close(A, comm, weighted = TRUE)
 community each node belongs to}
 
 \item{weighted}{Is the network weighted?
-Defaults to TRUE.
-Set to FALSE for weighted measures}
+Defaults to FALSE.
+Set to TRUE for weighted measures}
 }
 \value{
 A vector of community closeness centrality values for each specified
@@ -36,6 +36,12 @@ result <- comm.close(A, comm)
 #Unweighted
 result <- comm.close(A, comm, weighted = FALSE)
 
+}
+\references{
+Christensen, A. P., Cotter, K. N., Silvia, P. J., & Benedek, M. (2018)
+Scale development via network analysis: A comprehensive and concise measure of Openness to Experience
+\emph{PsyArXiv}, 1-40.
+doi: \href{https://doi.org/10.31234/osf.io/3raxt}{10.31234/osf.io/3raxt}
 }
 \author{
 Alexander Christensen <alexpaulchristensen@gmail.com>

@@ -8,8 +8,8 @@
 #' community each node belongs to
 #' 
 #' @param weighted Is the network weighted?
-#' Defaults to TRUE.
-#' Set to FALSE for weighted measures
+#' Defaults to FALSE.
+#' Set to TRUE for weighted measures
 #' 
 #' @return A vector of community closeness centrality values for each specified
 #' community in the network
@@ -26,11 +26,17 @@
 #' #Unweighted
 #' result <- comm.close(A, comm, weighted = FALSE)
 #'
+#' @references 
+#' Christensen, A. P., Cotter, K. N., Silvia, P. J., & Benedek, M. (2018)
+#' Scale development via network analysis: A comprehensive and concise measure of Openness to Experience
+#' \emph{PsyArXiv}, 1-40.
+#' doi: \href{https://doi.org/10.31234/osf.io/3raxt}{10.31234/osf.io/3raxt}
+#'
 #' @author Alexander Christensen <alexpaulchristensen@gmail.com>
 #' 
 #' @export
 #Community Closeness Centrality----
-comm.close <- function (A, comm, weighted = TRUE)
+comm.close <- function (A, comm, weighted = FALSE)
 {
     if(is.null(comm))
     {stop("comm must be input")}
@@ -45,24 +51,17 @@ comm.close <- function (A, comm, weighted = TRUE)
     
     allP <- pathlengths(A, weighted = weighted)$ASPLi
     mean.allP <- mean(allP)
-    remove <- matrix(0,nrow=len,ncol=1)
+    remove <- vector("numeric",length=len)
     
     for(j in 1:len)
     {
         rem <- which(comm==uniq[j])
         
-        remove[j,] <- (mean(allP[-rem]))-mean.allP
+        remove[j] <- 1/mean(allP[rem])
     }
     
-    norm <- remove
+    names(remove) <- uniq
     
-    for(k in 1:len)
-    {norm[k,] <- (remove[k,] - min(remove))/(max(remove)-min(remove))}
-    
-    norm <- as.vector(round(norm,3))
-    
-    names(norm) <- uniq
-    
-    return(norm)
+    return(remove)
 }
 #----

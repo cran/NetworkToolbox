@@ -6,7 +6,6 @@
 #' @param BC How should the betweenness centrality be computed?
 #' Defaults to "standard".
 #' Set to "random" for rspbc.
-#' Set to "average" for the average of "standard" and "random"
 #' 
 #' @param beta Beta parameter to be passed to the \emph{rspbc} function
 #' 
@@ -33,7 +32,7 @@
 #' 
 #' @export
 #Hybrid Centality----
-hybrid <- function (A, BC = c("standard","random","average"), beta)
+hybrid <- function (A, BC = c("standard","random"), beta)
 {
     A <- abs(A)
     
@@ -55,11 +54,8 @@ hybrid <- function (A, BC = c("standard","random","average"), beta)
     {
         BCu<-rspbc(binarize(A),beta=beta)
         BCw<-rspbc(A,beta=beta)
-    }else if(BC=="average")
-    {
-        BCu<-rowMeans(cbind(betweenness(A,weighted=FALSE),rspbc(binarize(A))))
-        BCw<-rowMeans(cbind(betweenness(A),rspbc(A)))
     }
+
     CCu<-closeness(A,weighted=FALSE)
     CCw<-closeness(A)
     if(isSymmetric(A))

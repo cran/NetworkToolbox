@@ -5,8 +5,8 @@
 \title{Bootstrapped Network Generalization}
 \usage{
 bootgen(data, method = c("MaST", "TMFG", "LoGo", "threshold"),
-  n = nrow(data), iter = 1000, normal = FALSE, na.data = c("pairwise",
-  "listwise", "fiml", "none"), cores, ...)
+  n = nrow(data), iter = 1000, normal = FALSE,
+  na.data = c("pairwise", "listwise", "fiml", "none"), cores, ...)
 }
 \arguments{
 \item{data}{A set of data}
