@@ -35,6 +35,7 @@
 hybrid <- function (A, BC = c("standard","random"), beta)
 {
     A <- abs(A)
+    A <- as.matrix(A)
     
     if(missing(BC))
     {BC<-"standard"
@@ -58,10 +59,10 @@ hybrid <- function (A, BC = c("standard","random"), beta)
 
     CCu<-closeness(A,weighted=FALSE)
     CCw<-closeness(A)
-    if(isSymmetric(A))
+    if(isSym(A))
     {Deg<-degree(A)
     }else{Deg<-degree(A)$outDeg}
-    if(isSymmetric(A))
+    if(isSym(A))
     {Str<-strength(A)
     }else{Str<-strength(A)$outStr}
     ECu<-eigenvector(A,weighted=FALSE)

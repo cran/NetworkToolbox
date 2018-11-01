@@ -5,7 +5,7 @@
 \title{Stabilizing Nodes}
 \usage{
 stable(A, comm = c("walktrap", "louvain"), cent = c("betweenness",
-  "rspbc", "strength", "degree", "hybrid"), ...)
+  "rspbc", "closeness", "strength", "degree", "hybrid"), ...)
 }
 \arguments{
 \item{A}{An adjacency matrix of network data}

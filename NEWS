@@ -1,3 +1,14 @@
+Changes in version 1.2.2
+
+o comcat: added functionality to compute connectivity across communities or for each community
+
+o stable: added closeness centrality
+
+o desc: descriptive statistics function for a single variable
+
+o desc.all: descriptive statistics function for a dataset
+
+
 Changes in version 1.2.1
 
 o updated comm.close algorithm: takes the reciprocal of the mean ASPL of each community
