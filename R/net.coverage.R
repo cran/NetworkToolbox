@@ -8,8 +8,8 @@
 #' @param nodes Subset of nodes to examine the coverage of the network
 #' 
 #' @param weighted Is the network weighted?
-#' Defaults to FALSE.
-#' Set to TRUE for weighted measures
+#' Defaults to \code{FALSE}.
+#' Set to \code{TRUE} for weighted measures
 #' 
 #' @return Returns a list containing:
 #' 
@@ -56,6 +56,7 @@ net.coverage <- function (A, nodes, weighted = FALSE)
     res$mean <- mean(apply(sdist,1,min))
     res$sd <- sd(apply(sdist,1,min))
     res$range <- range(apply(sdist,1,min))
+    res$dist <- apply(sdist,1,min)
     
     return(res)
 }

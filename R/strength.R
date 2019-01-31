@@ -22,11 +22,13 @@
 #' str <- strength(A)
 #' 
 #' #Directed network
+#' \dontrun{
 #' dep <- depend(neoOpen)
 #' 
 #' Adep <- TMFG(dep, depend = TRUE)$A
 #' 
 #' str <- strength(Adep)
+#' }
 #' 
 #' @references 
 #' Rubinov, M., & Sporns, O. (2010). 
@@ -40,13 +42,15 @@
 #Node Strength----
 strength <- function (A)
 {
-    if(nrow(A)!=ncol(A))
+    if(is.vector(A))
+    {return(0)
+    }else if(nrow(A)!=ncol(A))
     {stop("Input not an adjacency matrix")}
     
     A <- abs(A)
     A <- as.matrix(A)
     
-    if(isSym(A)==TRUE)
+    if(isSymmetric(A, check.attributes = FALSE))
     {
         Str <- round(as.vector(colSums(A)),2)
         names(Str) <- colnames(A)
@@ -62,7 +66,7 @@ strength <- function (A)
         relinf <- as.vector((outStr-inStr)/(outStr+inStr))
         names(relinf) <- colnames(A)
             
-            if(all(inStr==outStr))
+            if(all(relinf<.001))
             {Str <- round(as.vector(colSums(A)),2)
             names(Str) <- colnames(A)
             return(Str)

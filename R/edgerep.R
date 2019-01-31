@@ -6,9 +6,9 @@
 #' @param B An adjacency matrix of network B
 #' 
 #' @param corr Correlation method for assessing the relatonship between the replicated edge weights.
-#' Defaults to "pearson".
-#' Set to "spearman" for non-linear or monotonic associations.
-#' Set to "kendall" for rank-order correlations
+#' Defaults to \code{"pearson"}.
+#' Set to \code{"spearman"} for non-linear or monotonic associations.
+#' Set to \code{"kendall"} for rank-order correlations
 #' 
 #' @return Returns a list containing:
 #' 
@@ -55,7 +55,7 @@ edgerep <- function (A, B,
     {corr<-"pearson"
     }else{corr<-match.arg(corr)}
 
-    if(!isSym(A))
+    if(!isSymmetric(A, check.attributes = FALSE))
     {
         if(all(rowSums(A)==colSums(A)))
         {A<-as.matrix(Matrix::forceSymmetric(A))
@@ -63,7 +63,7 @@ edgerep <- function (A, B,
         warning(paste("Adjacency matrix",nameA,"was made to be symmetric"))}
     }
     
-    if(!isSym(B))
+    if(!isSymmetric(B, check.attributes = FALSE))
     {
         if(all(rowSums(B)==colSums(B)))
         {B<-as.matrix(Matrix::forceSymmetric(B))
