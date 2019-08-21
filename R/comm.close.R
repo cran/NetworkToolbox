@@ -29,7 +29,7 @@
 #' @references 
 #' Christensen, A. P. (in press).
 #' NetworkToolbox: Methods and measures for brain, cognitive, and psychometric network analysis in R.
-#' \emph{The R Journal}. doi: 10.31234/osf.io/6kmav
+#' \emph{The R Journal}, 1-18. doi: 10.31234/osf.io/6kmav
 #' 
 #' Christensen, A. P., Cotter, K. N., Silvia, P. J., & Benedek, M. (2018)
 #' Scale development via network analysis: A comprehensive and concise measure of Openness to Experience

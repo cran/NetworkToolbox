@@ -11,10 +11,17 @@
 #' @param cent Centrality measure to be used.
 #' Defaults to \code{"strength"}.
 #' 
+#' @param absolute Should network use absolute weights?
+#' Defaults to \code{TRUE}.
+#' Set to \code{FALSE} for signed weights
+#' 
 #' @param metric Whether the metric should be compute for across all of the communities
 #' (a single value) or for each community (a value for each community).
 #' Defaults to \code{"across"}.
 #' Set to \code{"each"} for values for each community
+#' 
+#' @param diagonal Sets the diagonal values of the \code{A} input.
+#' Defaults to \code{0}
 #' 
 #' @param ... Additional arguments for \code{\link[igraph]{cluster_walktrap}}
 #' and \code{\link[NetworkToolbox]{louvain}} community detection algorithms
@@ -38,13 +45,17 @@
 #Communicating----
 comcat <- function (A, comm = c("walktrap","louvain"),
                     cent = c("strength","degree"),
-                    metric = c("across","each"), ...)
+                    absolute = TRUE,
+                    metric = c("across","each"),
+                    diagonal = 0, ...)
 {
     #nodes
     n <- ncol(A)
     
-    #set diagonal to zero
-    diag(A) <- 0
+    #change diagonal values if necessary
+    if(missing(diagonal))
+    {diagonal <- 0
+    }else{diagonal <- diagonal}
     
     if(missing(cent))
     {cent<-"strength"
@@ -72,68 +83,76 @@ comcat <- function (A, comm = c("walktrap","louvain"),
     
     fact<-list()
     
-    if(metric=="across")
+    if(length(unique(comm))!=1)
     {
-        
-        for(i in 1:max(facts))
+        if(metric=="across")
         {
-            Ah <- A[which(facts!=i),which(facts==i)]
-        
-                if(cent=="degree")
-                {com<-colSums(ifelse(Ah!=0,1,0))
-                }else if(cent=="strength")
-                {com<-colSums(Ah)}
             
-                fact[[i]]<-com
-        }
-    
-        commn<-unlist(fact)
-    
-        bind<-cbind(ord,commn)
-    
-        commord<-bind[order(bind[,1]),]
-    
-        commmat<-matrix(commord[,3],nrow=nrow(commord),ncol=1)
-    
-        commmat <- as.vector(commmat)
-    
-        names(commmat) <- colnames(A)
-    
-        return(commmat)
-    }else if(metric=="each")
-    {
-        
-        uniq <- unique(facts)
-        
-        item <- list()
-        
-        commat <- matrix(NA,nrow=nrow(A),ncol=length(uniq))
-        
-        colnames(commat) <- paste(uniq)
-        
-        for(i in 1:ncol(A))
-        {
-            Ah <- A[,i]
-            
-            uniq.no <- uniq[which(uniq!=facts[i])]
-            
-            for(j in 1:length(uniq.no))
+            for(i in 1:max(facts, na.rm = TRUE))
             {
-                Aha <- Ah[which(facts==uniq.no[j])]
+                Ah <- A[which(facts!=i),which(facts==i)]
                 
                 if(cent=="degree")
-                {com<-sum(ifelse(Aha!=0,1,0))
+                {com<-colSums(binarize(Ah))
                 }else if(cent=="strength")
-                {com<-sum(Aha)}
+                {com<-colSums(Ah,absolute)}
                 
-                commat[i,paste(uniq.no[j])] <- com
+                fact[[i]]<-com
             }
+            
+            commn<-unlist(fact)
+            
+            bind<-cbind(ord,commn)
+            
+            commord<-bind[order(bind[,1]),]
+            
+            commmat<-matrix(commord[,3],nrow=nrow(commord),ncol=1)
+            
+            commmat <- as.vector(commmat)
+            
+            names(commmat) <- colnames(A)
+            
+            return(commmat)
+        }else if(metric=="each")
+        {
+            
+            uniq <- unique(facts)
+            
+            item <- list()
+            
+            commat <- matrix(NA,nrow=nrow(A),ncol=length(uniq))
+            
+            colnames(commat) <- paste(uniq)
+            
+            for(i in 1:ncol(A))
+            {
+                Ah <- A[,i]
+                
+                uniq.no <- uniq[which(uniq!=facts[i])]
+                
+                for(j in 1:length(uniq.no))
+                {
+                    Aha <- Ah[which(facts==uniq.no[j])]
+                    
+                    if(cent=="degree")
+                    {com<-sum(ifelse(Aha!=0,1,0))
+                    }else if(cent=="strength")
+                    {com<-sum(Aha)}
+                    
+                    commat[i,paste(uniq.no[j])] <- com
+                }
+            }
+            
+            commat[,paste(uniq[order(uniq)])]
+            row.names(commat) <- colnames(A)
+            
+            commat <- commat[,order(colnames(commat))]
+            
+            return(commat)
         }
-        
-        commat[,paste(uniq[order(uniq)])]
-        row.names(commat) <- colnames(A)
-        
-        commat <- commat[,order(colnames(commat))]
+    }else{
+        commat <- as.matrix(rep(0,ncol(A)),ncol=1)
+        colnames(commat) <- paste(unique(comm))
         
         return(commat)
     }

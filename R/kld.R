@@ -9,7 +9,7 @@
 #' @param test Reduced or testing model
 #' 
 #' @return A value greater than 0.
-#' Smaller values suggest the probablity distribution of the reduced model is near the full model
+#' Smaller values suggest the probability distribution of the reduced model is near the full model
 #' 
 #' @examples
 #' A1 <- solve(cov(neoOpen))
@@ -38,9 +38,10 @@ kld <- function (base, test)
     if(nrow(test)!=ncol(test))
     {stop("Test must be an adjacency matrix")}
     
-    kl <- sum(diag(solve(base)%*%test)) - log(det(solve(base)%*%test)) - ncol(base)
+    kl1 <- sum(diag(solve(base)%*%test)) - log(det(solve(base)%*%test)) - ncol(base)
+    kl2 <- sum(diag(solve(test)%*%base)) - log(det(solve(test)%*%base)) - ncol(test)
     
-    kl <- log(kl)
+    kl <- log(kl1 + kl2)
     
     return(kl)
 }

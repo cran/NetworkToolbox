@@ -12,10 +12,12 @@
 #' @references
 #' Christensen, A. P. (in press).
 #' NetworkToolbox: Methods and measures for brain, cognitive, and psychometric network analysis in R.
-#' \emph{The R Journal}.
+#' \emph{The R Journal}, 1-18.
 #' doi: \href{https://doi.org/10.31234/osf.io/6kmav}{10.31234/osf.io/6kmav}
 #' 
 #' @author Alexander Christensen <alexpaulchristensen@gmail.com>
+#' 
+#' @importFrom utils packageDescription
 #' 
 "_PACKAGE"
 #> [1] "_PACKAGE"

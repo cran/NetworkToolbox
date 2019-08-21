@@ -11,8 +11,15 @@
 #' @param cent Centrality measure to be used.
 #' Defaults to \code{"strength"}.
 #' 
+#' @param absolute Should network use absolute weights?
+#' Defaults to \code{TRUE}.
+#' Set to \code{FALSE} for signed weights
+#' 
 #' @param ... Additional arguments for \code{\link[igraph]{cluster_walktrap}}
 #' and \code{\link[NetworkToolbox]{louvain}} community detection algorithms
+#' 
+#' @param diagonal Sets the diagonal values of the \code{A} input.
+#' Defaults to \code{0}
 #' 
 #' @return A matrix containing the within-community centrality value for each node
 #' 
@@ -33,13 +40,16 @@
 #Stabilizing----
 stable <- function (A, comm = c("walktrap","louvain"),
                     cent = c("betweenness","rspbc","closeness",
-                             "strength","degree","hybrid"), ...)
+                             "strength","degree","hybrid"), 
+                    absolute = TRUE, diagonal = 0, ...)
 {
     #nodes
     n <- ncol(A)
     
-    #set diagonal to zero
-    diag(A) <- 0
+    #change diagonal values if necessary
+    if(missing(diagonal))
+    {diagonal <- 0
+    }else{diagonal <- diagonal}
     
     if(missing(cent))
     {cent<-"strength"
@@ -63,7 +73,7 @@ stable <- function (A, comm = c("walktrap","louvain"),
     
     fact<-list()
     
-    for(i in 1:max(facts))
+    for(i in 1:max(facts, na.rm = TRUE))
     {
         Ah<-A[which(facts==i),which(facts==i)]
         
@@ -74,7 +84,7 @@ stable <- function (A, comm = c("walktrap","louvain"),
         }else if(cent=="closeness")
         {stab<-closeness(Ah)
         }else if(cent=="strength")
-        {stab<-strength(Ah)
+        {stab<-strength(Ah,absolute)
         }else if(cent=="degree")
         {stab<-degree(Ah)}
         
@@ -83,9 +93,9 @@ stable <- function (A, comm = c("walktrap","louvain"),
     
     stabil<-unlist(fact)
     
-    bind<-cbind(ord,stabil)
+    bind <- suppressWarnings(cbind(ord,stabil))
     
-    stabord<-bind[order(bind[,1]),]
+    stabord <- bind[order(bind[,1]),]
     
     stabmat<-matrix(stabord[,3],nrow=nrow(stabord),ncol=1)
     
