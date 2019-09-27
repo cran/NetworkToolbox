@@ -30,7 +30,8 @@
 #' while < 0 indicates a more regular network and > 0 indicates a more random network
 #' 
 #' @examples
-#' A<-TMFG(neoOpen)$A
+#' # normal set to FALSE for CRAN tests
+#' A<-TMFG(neoOpen, normal = FALSE)$A
 #'
 #' swmHG <- smallworldness(A, method="HG")
 #' 

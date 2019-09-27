@@ -15,15 +15,14 @@
 #' 
 #' @param normal Should data be transformed to a normal distribution?
 #' Input must be a dataset.
-#' Defaults to \code{FALSE}.
-#' Data is not transformed to be normal.
-#' Set to \code{TRUE} if data should be transformed to be normal
-#' (computes correlations using the \code{\link[qgraph]{cor_auto}} function)
+#' Defaults to \code{TRUE}.
+#' Computes correlations using the \code{\link[qgraph]{cor_auto}} function.
+#' Set to \code{FALSE} for Pearson's correlation
 #' 
 #' @param na.data How should missing data be handled?
 #' For \code{"listwise"} deletion the \code{\link{na.omit}} function is applied.
-#' Set to \code{"fiml"} for Full Information Maxmimum Likelihood (\code{\link[psych]{corFiml}}).
-#' Full Information Maxmimum Likelihood is \strong{recommended} but time consuming
+#' Set to \code{"fiml"} for Full Information Maximum Likelihood (\code{\link[psych]{corFiml}}).
+#' Full Information Maximum Likelihood is \strong{recommended} but time consuming
 #' 
 #' @param depend Is network a dependency (or directed) network?
 #' Defaults to \code{FALSE}.
@@ -60,7 +59,8 @@
 #' with edges crossing; Tumminello, Aste, Di Matteo, & Mantegna, 2005).
 #' 
 #' @examples
-#' TMFG.net <- TMFG(neoOpen)
+#' # normal set to FALSE for CRAN tests
+#' TMFG.net <- TMFG(neoOpen, normal = FALSE)
 #' 
 #' @references
 #' Barfuss, W., Massara, G. P., Di Matteo, T., & Aste, T. (2016).
@@ -90,7 +90,7 @@
 #' 
 #' @export
 #TMFG Filtering Method----
-TMFG <-function (data, normal = FALSE,
+TMFG <-function (data, normal = TRUE,
                  na.data = c("pairwise","listwise","fiml","none"),
                  depend = FALSE)
 {
@@ -135,9 +135,7 @@ TMFG <-function (data, normal = FALSE,
     
     # Signed correlations
     tcormat <- cormat
-    
-    # Only positive correlations
-    #tcormat <- abs(cormat)
+    cormat <- abs(cormat)
     
     # Let user know matrix is too small for TMFG estimation
     # It is still okay to proceed

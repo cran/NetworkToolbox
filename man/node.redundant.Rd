@@ -4,17 +4,23 @@
 \alias{node.redundant}
 \title{Detects Redundant Nodes in a Network}
 \usage{
-node.redundant(A, sig, method = c("alpha", "bonferroni", "FDR", "adapt"))
+node.redundant(A, sig, type = c("wTO", "pcor"), method = c("alpha",
+  "bonferroni", "FDR", "adapt"))
 }
 \arguments{
 \item{A}{Matrix or data frame.
-An adjacency matrix of network data}
+An adjacency matrix of network data (if \code{type = "wTO"}).
+Dataset (if \code{type = "pcor"})}
 
 \item{sig}{Numeric.
 \emph{p}-value for significance of overlap (defaults to \code{.05}).
 If more than 200 connections, then \code{\link[fdrtool]{fdrtool}}
 is used to correct for false positives. In these instances, \code{sig}
 sets the \emph{q}-value for significance of overlap (defaults to \code{.10})}
+
+\item{type}{Character.
+Computes weighted topological overlap (\code{"wTO"})
+or partial correlations (\code{"pcor"})}
 
 \item{method}{Character.
 Computes significance using the standard \emph{p}-value (\code{"alpha"}),
@@ -35,10 +41,14 @@ overlap is implemented using the method from Nowick et al. (2009; see references
 and the function \link[wTO]{wTO} from the wTO package.
 }
 \examples{
-
+# normal set to FALSE for CRAN tests
 net <- TMFG(neoOpen, normal = FALSE)$A
 
-result <- node.redundant(A = net, method = "adapt")
+# weighted topological overlap
+result <- node.redundant(A = net, method = "adapt", type = "wTO")
+
+# partial correlation
+result <- node.redundant(A = neoOpen, method = "adapt", type = "pcor")
 
 }
 \references{

@@ -6,13 +6,18 @@
 #' and the function \link[wTO]{wTO} from the wTO package. 
 #' 
 #' @param A Matrix or data frame.
-#' An adjacency matrix of network data
+#' An adjacency matrix of network data (if \code{type = "wTO"}).
+#' Dataset (if \code{type = "pcor"})
 #' 
 #' @param sig Numeric.
 #' \emph{p}-value for significance of overlap (defaults to \code{.05}).
 #' If more than 200 connections, then \code{\link[fdrtool]{fdrtool}}
 #' is used to correct for false positives. In these instances, \code{sig}
 #' sets the \emph{q}-value for significance of overlap (defaults to \code{.10})
+#' 
+#' @param type Character.
+#' Computes weighted topological overlap (\code{"wTO"})
+#' or partial correlations (\code{"pcor"})
 #' 
 #' @param method Character.
 #' Computes significance using the standard \emph{p}-value (\code{"alpha"}),
@@ -25,10 +30,14 @@
 #' to redundant nodes with the name of object in the list
 #' 
 #' @examples
-#' 
+#' # normal set to FALSE for CRAN tests
 #' net <- TMFG(neoOpen, normal = FALSE)$A
 #' 
-#' result <- node.redundant(A = net, method = "adapt")
+#' # weighted topological overlap
+#' result <- node.redundant(A = net, method = "adapt", type = "wTO")
+#' 
+#' # partial correlation
+#' result <- node.redundant(A = neoOpen, method = "adapt", type = "pcor")
 #' 
 #' @references
 #' #wTO
@@ -43,17 +52,29 @@
 #' 
 #' @export
 #Redundant Nodes Function
-node.redundant <- function (A, sig, method = c("alpha", "bonferroni", "FDR", "adapt"))
+node.redundant <- function (A, sig, type = c("wTO", "pcor"),
+                            method = c("alpha", "bonferroni", "FDR", "adapt"))
 {
     if(missing(method))
     {method <- "adapt"
     }else{method <- match.arg(method)}
     
+    if(missing("type"))
+    {type <- "pcor"
+    }else{method <- match.arg(type)}
+    
     #number of nodes
     nodes <- ncol(A)
     
-    #compute weighted topological overlap
-    tom <- wTO::wTO(A,sign="abs")
+    #compute type of overlap method
+    if(type == "wTO")
+    {tom <- wTO::wTO(A,sign="sign")
+    }else if(type == "pcor")
+    {
+        tom <- qgraph::cor_auto(A)
+        tom <- -cov2cor(solve(tom))
+    }
+    
     diag(tom) <- 0
     
     #lower triangle of TOM
@@ -75,7 +96,7 @@ node.redundant <- function (A, sig, method = c("alpha", "bonferroni", "FDR", "ad
     names(lower) <- name.mat[lower.tri(name.mat)]
     
     #obtain only positive values
-    pos.vals <- na.omit(ifelse(lower==0,NA,lower))
+    pos.vals <- na.omit(ifelse(lower<=0,NA,lower))
     attr(pos.vals, "na.action") <- NULL
     
     #determine distribution

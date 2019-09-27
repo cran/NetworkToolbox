@@ -1,3 +1,8 @@
+Changes in version 1.3.1
+
+o 'TMFG' bug fix
+
+
 Changes in version 1.3.0
 
 o converged all Connectome Predictive Modeling into one documentation see '?cpm'
@@ -25,6 +30,7 @@ o additional updates to documentation
 o bug fix for one dimension in comcat function
 
 o made 'rspbc' output a vector
+
 
 Changes in version 1.2.3
 
