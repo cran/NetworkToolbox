@@ -24,7 +24,7 @@ Returns a list containing:
 Computes the average and standard deviation of the weights in the network
 }
 \examples{
-# normal set to FALSE for CRAN tests
+# Pearson's correlation only for CRAN checks
 A <- TMFG(neoOpen, normal = FALSE)$A
 
 connectivity <- conn(A)

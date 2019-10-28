@@ -30,8 +30,8 @@
 #' while < 0 indicates a more regular network and > 0 indicates a more random network
 #' 
 #' @examples
-#' # normal set to FALSE for CRAN tests
-#' A<-TMFG(neoOpen, normal = FALSE)$A
+#' # Pearson's correlation only for CRAN checks
+#' A <- TMFG(neoOpen, normal = FALSE)$A
 #'
 #' swmHG <- smallworldness(A, method="HG")
 #' 

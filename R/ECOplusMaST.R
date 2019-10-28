@@ -7,7 +7,7 @@
 #' @return A sparse association matrix
 #' 
 #' @examples
-#' # half the variables for CRAN tests
+#' # half the variables for CRAN checks
 #' ECOplusMaST.net <- ECOplusMaST(neoOpen[,c(1:24)])
 #' 
 #' @references 

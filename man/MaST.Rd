@@ -33,7 +33,8 @@ A sparse association matrix
 Applies the Maximum Spanning Tree (MaST) filtering method
 }
 \examples{
-MaST.net <- MaST(neoOpen)
+# Pearson's correlation only for CRAN checks
+MaST.net <- MaST(neoOpen, normal = FALSE)
 
 }
 \references{

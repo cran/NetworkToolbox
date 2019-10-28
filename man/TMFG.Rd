@@ -71,8 +71,8 @@ drawn on a sphere with no edges crossing (often, however, the networks are depic
 with edges crossing; Tumminello, Aste, Di Matteo, & Mantegna, 2005).
 }
 \examples{
-# normal set to FALSE for CRAN tests
-TMFG.net <- TMFG(neoOpen, normal = FALSE)
+# Pearson's correlation only for CRAN checks
+A <- TMFG(neoOpen, normal = FALSE)$A
 
 }
 \references{

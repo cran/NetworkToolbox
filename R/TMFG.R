@@ -59,8 +59,8 @@
 #' with edges crossing; Tumminello, Aste, Di Matteo, & Mantegna, 2005).
 #' 
 #' @examples
-#' # normal set to FALSE for CRAN tests
-#' TMFG.net <- TMFG(neoOpen, normal = FALSE)
+#' # Pearson's correlation only for CRAN checks
+#' A <- TMFG(neoOpen, normal = FALSE)$A
 #' 
 #' @references
 #' Barfuss, W., Massara, G. P., Di Matteo, T., & Aste, T. (2016).

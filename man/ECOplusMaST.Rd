@@ -17,7 +17,7 @@ Applies the \code{\link[NetworkToolbox]{ECO}} neural network filtering method
 combined with the \code{\link[NetworkToolbox]{MaST}} filtering method
 }
 \examples{
-# half the variables for CRAN tests
+# half the variables for CRAN checks
 ECOplusMaST.net <- ECOplusMaST(neoOpen[,c(1:24)])
 
 }
