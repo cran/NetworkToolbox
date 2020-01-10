@@ -25,20 +25,18 @@
 #' 
 #' nodes <- seq(1,48,2)
 #' 
-#' result <- net.coverage(A, nodes)
+#' result <- network.coverage(A, nodes)
 #' 
 #' @references 
 #' Christensen, A. P., Cotter, K. N., Silvia, P. J., & Benedek, M. (2018)
 #' Scale development via network analysis: A comprehensive and concise measure of Openness to Experience
 #' \emph{PsyArXiv}, 1-40.
-#' doi: \href{https://doi.org/10.31234/osf.io/3raxt}{10.31234/osf.io/3raxt}
 #' 
-#' @author Alexander Christensen <alexpaulchristensen@gmail.com> and
-#' Mathias Benedek <mathias.benedek@uni-graz.at>
+#' @author Alexander Christensen <alexpaulchristensen@gmail.com> and Mathias Benedek <mathias.benedek@uni-graz.at>
 #' 
 #' @export
 #Network Coverage----
-net.coverage <- function (A, nodes, weighted = FALSE)
+network.coverage <- function (A, nodes, weighted = FALSE)
 {
     fnames <- colnames(A)
     
