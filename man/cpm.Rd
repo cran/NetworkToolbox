@@ -9,9 +9,10 @@
 \alias{cpmPlot}
 \title{Connectome Predictive Modeling}
 \usage{
-cpmIV(neuralarray, bstat, covar, thresh = .01, method = c("mean", "sum"),
-      model = c("linear","quadratic","cubic"), corr = c("pearson","spearman"),
-      nEdges, cores, progBar = TRUE)
+cpmIV(neuralarray, bstat, covar, thresh = .01, groups = NULL,
+      method = c("mean", "sum"), model = c("linear","quadratic","cubic"),
+      corr = c("pearson","spearman"), nEdges, 
+      standardize = FALSE, cores, progBar = TRUE)
       
 cpmEV(train_na, train_b, valid_na, valid_b, thresh = .01,
       overlap = FALSE, progBar = TRUE)
@@ -33,6 +34,10 @@ cpmPlot(cpm.obj, visual.nets = FALSE)
 \item{thresh}{Sets an \eqn{\alpha} threshold for edge weights to be retained.
 Defaults to \code{.01}}
 
+\item{groups}{Allows grouping variables to be used for plotting points.
+\strong{Must} be a vector.
+Defaults to \code{NULL}}
+
 \item{method}{Use \code{"mean"} or \code{"sum"} of edge strengths in the positive and negative connectomes.
 Defaults to \code{"mean"}}
 
@@ -46,6 +51,9 @@ Set to \code{"spearman"} for non-linear or monotonic associations}
 \item{nEdges}{Number of participants that are required
 to have an edge to appear in the plots.
 Defaults to 10 percent of edges in participants}
+
+\item{standardize}{Should the behavioral statistic (\code{bstat}) be standardized?
+Defaults to \code{FALSE}}
 
 \item{cores}{Number of computer processing cores to use when performing covariate analyses.
 Defaults to \emph{n} - 1 total number of cores.

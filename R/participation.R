@@ -26,11 +26,12 @@
 #' #theoretical factors
 #' comm <- rep(1:8, each = 6)
 #' 
-#' A <- TMFG(neoOpen)$A
+#' # Pearson's correlation only for CRAN checks
+#' A <- TMFG(neoOpen, normal = FALSE)$A
 #' 
 #' pc <- participation(A, comm = comm)
 #' 
-#' #walktrap factors
+#' # Walktrap factors
 #' wpc <- participation(A, comm = "walktrap")
 #' 
 #' @references
@@ -40,7 +41,7 @@
 #' 
 #' Rubinov, M., & Sporns, O. (2010). 
 #' Complex network measures of brain connectivity: Uses and interpretations. 
-#' \emph{Neuroimage}, \emph{52}, 1059-1069.
+#' \emph{NeuroImage}, \emph{52}, 1059-1069.
 #' 
 #' @author Alexander Christensen <alexpaulchristensen@gmail.com>
 #' 

@@ -50,9 +50,10 @@
 #' }
 #' 
 #' @usage
-#' cpmIV(neuralarray, bstat, covar, thresh = .01, method = c("mean", "sum"),
-#'       model = c("linear","quadratic","cubic"), corr = c("pearson","spearman"),
-#'       nEdges, cores, progBar = TRUE)
+#' cpmIV(neuralarray, bstat, covar, thresh = .01, groups = NULL,
+#'       method = c("mean", "sum"), model = c("linear","quadratic","cubic"),
+#'       corr = c("pearson","spearman"), nEdges, 
+#'       standardize = FALSE, cores, progBar = TRUE)
 #'       
 #' cpmEV(train_na, train_b, valid_na, valid_b, thresh = .01,
 #'       overlap = FALSE, progBar = TRUE)
@@ -73,6 +74,10 @@
 #' @param thresh Sets an \eqn{\alpha} threshold for edge weights to be retained.
 #' Defaults to \code{.01}
 #' 
+#' @param groups Allows grouping variables to be used for plotting points.
+#' \strong{Must} be a vector.
+#' Defaults to \code{NULL}
+#' 
 #' @param method Use \code{"mean"} or \code{"sum"} of edge strengths in the positive and negative connectomes.
 #' Defaults to \code{"mean"}
 #' 
@@ -86,6 +91,9 @@
 #' @param nEdges Number of participants that are required
 #' to have an edge to appear in the plots.
 #' Defaults to 10 percent of edges in participants
+#' 
+#' @param standardize Should the behavioral statistic (\code{bstat}) be standardized?
+#' Defaults to \code{FALSE}
 #' 
 #' @param cores Number of computer processing cores to use when performing covariate analyses.
 #' Defaults to \emph{n} - 1 total number of cores.
@@ -196,7 +204,7 @@
 #'
 #' @importFrom foreach %dopar%
 #' @importFrom stats cor.test coef cov2cor lm na.omit
-#' @importFrom graphics par abline hist plot text
+#' @importFrom graphics par abline hist plot text legend
 #' @importFrom grDevices colorRampPalette dev.new
 #' @importFrom MASS psi.bisquare
 #' 
@@ -204,11 +212,15 @@
 #CPM Functions----
 #CPM Internal Validation----
 cpmIV <- function (neuralarray, bstat, covar, thresh = .01,
-                   method = c("mean", "sum"),
+                   groups = NULL, method = c("mean", "sum"),
                    model = c("linear","quadratic","cubic"),
                    corr = c("pearson","spearman"), nEdges, 
-                   cores, progBar = TRUE)
+                   standardize = FALSE, cores, progBar = TRUE)
 {
+    ####################################
+    #### MISSING ARGUMENTS HANDLING ####
+    ####################################
+    
     if(missing(method))
     {method<-"mean"
     }else{method<-match.arg(method)}
@@ -221,9 +233,6 @@ cpmIV <- function (neuralarray, bstat, covar, thresh = .01,
     {corr<-"pearson"
     }else{corr<-match.arg(corr)}
     
-    if(is.list(neuralarray))
-    {neuralarray<-neuralarray[[1]]}
-    
     if(missing(nEdges))
     {nEdges<-length(bstat)*.10
     }else{nEdges <- nEdges}
@@ -232,6 +241,10 @@ cpmIV <- function (neuralarray, bstat, covar, thresh = .01,
     {covar<-NULL
     }else if(!is.list(covar))
     {stop("Covariates vectors must be input as a list: list()")}
+    
+    ####################################
+    #### MISSING ARGUMENTS HANDLING ####
+    ####################################
     
     #functions list
     critical.r <- function(iter, a)
@@ -242,11 +255,12 @@ cpmIV <- function (neuralarray, bstat, covar, thresh = .01,
         return(cvr)
     }
     
-    bstat<-scale(bstat)
     bstat<-as.vector(bstat)
+    if(standardize)
+    {bstat<-scale(bstat)}
     
     #number of subjects
-    no_sub<-length(neuralarray)/nrow(neuralarray)/ncol(neuralarray)
+    no_sub<-dim(neuralarray)[3]
     #number of nodes
     no_node<-ncol(neuralarray)
     
@@ -442,40 +456,95 @@ cpmIV <- function (neuralarray, bstat, covar, thresh = .01,
     posmask <- ifelse(pos_mat>=nEdges,1,0)
     negmask <- ifelse(neg_mat>=nEdges,1,0)
     
+    if(!is.null(colnames(neuralarray)))
+    {
+        colnames(posmask) <- colnames(neuralarray)
+        row.names(posmask) <- colnames(posmask)
+        colnames(negmask) <- colnames(neuralarray)
+        row.names(negmask) <- colnames(negmask)
+    }
     
-    R_pos<-cor(behav_pred_pos,bstat)
+    R_pos<-cor(behav_pred_pos,bstat,use="pairwise.complete.obs")
     P_pos<-cor.test(behav_pred_pos,bstat)$p.value
-    R_neg<-cor(behav_pred_neg,bstat)
+    R_neg<-cor(behav_pred_neg,bstat,use="pairwise.complete.obs")
     P_neg<-cor.test(behav_pred_neg,bstat)$p.value
     
     P_pos<-ifelse(round(P_pos,3)!=0,round(P_pos,3),noquote("< .001"))
     P_neg<-ifelse(round(P_neg,3)!=0,round(P_neg,3),noquote("< .001"))
     
+    #bstat range
+    lower.bstat <- floor(range(bstat))[1]
+    upper.bstat <- ceiling(range(bstat))[2]
+    text.one <- lower.bstat - (lower.bstat * .20)
+    text.two <- upper.bstat - (upper.bstat * .20)
     
-    #plot positive
-    dev.new()
-    par(mar=c(5,5,4,2))
-    plot(bstat,behav_pred_pos,xlab="Observed Score\n(Z-score)",ylab="Predicted Score\n(Z-score)",
-         main="Positive Prediction",xlim=c(-3,3),ylim=c(-3,3),pch=16,col="darkorange2")
-    abline(lm(behav_pred_pos~bstat))
-    if(R_pos>=0)
-    {text(x=-2,y=2,
-          labels = paste("r = ",round(R_pos,3),"\np = ",P_pos))
-    }else if(R_pos<0)
-    {text(x=-2,y=-2,
-          labels = paste("r = ",round(R_pos,3),"\np = ",P_pos))}
-    #plot negative
-    dev.new()
-    par(mar=c(5,5,4,2))
-    plot(bstat,behav_pred_neg,xlab="Observed Score\n(Z-score)",ylab="Predicted Score\n(Z-score)",
-         main="Negative Prediction",xlim=c(-3,3),ylim=c(-3,3),pch=16,col="skyblue2")
-    abline(lm(behav_pred_neg~bstat))
-    if(R_neg>=0)
-    {text(x=-2,y=2,
-          labels = paste("r = ",round(R_neg,3),"\np = ",P_neg))
-    }else if(R_neg<0)
-    {text(x=-2,y=-2,
-          labels = paste("r = ",round(R_neg,3),"\np = ",P_neg))}
+    #set up groups
+    if(!is.null(groups))
+    {
+        #group labels
+        labs_groups <- unique(groups)
+        
+        #number of groups
+        n_groups <- length(labs_groups)
+        
+        #plot positive
+        dev.new()
+        par(mar=c(5,5,4,2))
+        plot(bstat,behav_pred_pos,xlab="Observed Score\n(Z-score)",ylab="Predicted Score\n(Z-score)",
+             main="Positive Prediction",xlim=c(lower.bstat,upper.bstat),
+             ylim=c(lower.bstat,upper.bstat),pch=c(16,1),col="darkorange2")
+        abline(lm(behav_pred_pos~bstat))
+        if(R_pos>=0)
+        {
+            text(x=text.one,y=text.two,labels = paste("r = ",round(R_pos,3),"\np = ",P_pos))
+            legend("bottomright",legend=labs_groups,col="darkorange2",pch=c(16,1))
+        }else if(R_pos<0)
+        {
+            text(x=text.one,y=text.one,labels = paste("r = ",round(R_pos,3),"\np = ",P_pos))
+            legend("topright",legend=labs_groups,col="darkorange2",pch=c(16,1))
+        }
+        
+        #plot negative
+        dev.new()
+        par(mar=c(5,5,4,2))
+        plot(bstat,behav_pred_neg,xlab="Observed Score\n(Z-score)",ylab="Predicted Score\n(Z-score)",
+             main="Negative Prediction",xlim=c(lower.bstat,upper.bstat),
+             ylim=c(lower.bstat,upper.bstat),pch=c(16,1),col="skyblue2")
+        abline(lm(behav_pred_neg~bstat))
+        if(R_neg>=0)
+        {
+            text(x=text.one,y=text.two,labels = paste("r = ",round(R_neg,3),"\np = ",P_neg))
+            legend("bottomright",legend=labs_groups,col="skyblue2",pch=c(16,1))
+        }else if(R_neg<0)
+        {
+            text(x=text.one,y=text.one,labels = paste("r = ",round(R_neg,3),"\np = ",P_neg))
+            legend("topright",legend=labs_groups,col="skyblue2",pch=c(16,1))
+        }
+    }else{
+        #plot positive
+        dev.new()
+        par(mar=c(5,5,4,2))
+        plot(bstat,behav_pred_pos,xlab="Observed Score\n(Z-score)",ylab="Predicted Score\n(Z-score)",
+             main="Positive Prediction",xlim=c(lower.bstat,upper.bstat),
+             ylim=c(lower.bstat,upper.bstat),pch=16,col="darkorange2")
+        abline(lm(behav_pred_pos~bstat))
+        if(R_pos>=0)
+        {text(x=text.one,y=text.two,labels = paste("r = ",round(R_pos,3),"\np = ",P_pos))
+        }else if(R_pos<0)
+        {text(x=text.one,y=text.one,labels = paste("r = ",round(R_pos,3),"\np = ",P_pos))}
+        
+        #plot negative
+        dev.new()
+        par(mar=c(5,5,4,2))
+        plot(bstat,behav_pred_neg,xlab="Observed Score\n(Z-score)",ylab="Predicted Score\n(Z-score)",
+             main="Negative Prediction",xlim=c(floor(range(bstat))[1],floor(range(bstat))[1]),
+             ylim=c(floor(range(bstat))[1],floor(range(bstat))[1]),pch=16,col="skyblue2")
+        abline(lm(behav_pred_neg~bstat))
+        if(R_neg>=0)
+        {text(x=text.one,y=text.two,labels = paste("r = ",round(R_neg,3),"\np = ",P_neg))
+        }else if(R_neg<0)
+        {text(x=text.one,y=-text.two,labels = paste("r = ",round(R_neg,3),"\np = ",P_neg))}
+    }
     
     bstat<-as.vector(bstat)
     behav_pred_pos<-as.vector(behav_pred_pos)
