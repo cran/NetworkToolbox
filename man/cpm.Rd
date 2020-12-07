@@ -6,13 +6,17 @@
 \alias{cpmEV}
 \alias{cpmFP}
 \alias{cpmFPperm}
+\alias{cpmIVperm}
 \alias{cpmPlot}
-\title{Connectome Predictive Modeling}
+\title{Connectome-based Predictive Modeling}
 \usage{
-cpmIV(neuralarray, bstat, covar, thresh = .01, groups = NULL,
+cpmIV(neuralarray, bstat, kfolds, covar, thresh = .01,
+      connections = c("separate", "overall"), groups = NULL,
       method = c("mean", "sum"), model = c("linear","quadratic","cubic"),
       corr = c("pearson","spearman"), nEdges, 
-      standardize = FALSE, cores, progBar = TRUE)
+      standardize = FALSE, cores, progBar = TRUE, plots = TRUE)
+      
+cpmIVperm(iter = 1000, ...)
       
 cpmEV(train_na, train_b, valid_na, valid_b, thresh = .01,
       overlap = FALSE, progBar = TRUE)
@@ -28,11 +32,21 @@ cpmPlot(cpm.obj, visual.nets = FALSE)
 
 \item{bstat}{Behavioral statistic for each participant with neural data (a vector)}
 
+\item{kfolds}{Numeric.
+Number of \emph{k}-fold validation samples.
+Defaults to the number of participants in the sample (i.e., \emph{n}),
+which is also known as leave-one-out validation.
+Recommended folds are \code{5} and \code{10}}
+
 \item{covar}{Covariates to be included in predicting relevant edges (\strong{time consuming}).
 \strong{Must} be input as a \code{list()} (see examples)}
 
 \item{thresh}{Sets an \eqn{\alpha} threshold for edge weights to be retained.
 Defaults to \code{.01}}
+
+\item{connections}{Character.
+Should positive and negative correlations be separated or used together?
+Defaults to \code{"separate"}}
 
 \item{groups}{Allows grouping variables to be used for plotting points.
 \strong{Must} be a vector.
@@ -62,6 +76,10 @@ Set to any number between 1 and maximum amount of cores on your computer}
 \item{progBar}{Should progress bar be displayed?
 Defaults to \code{TRUE}.
 Set to \code{FALSE} for no progress bar}
+
+\item{plots}{Should plots be plotted?
+Defaults to \code{TRUE}.
+Set to \code{FALSE} to hide plots}
 
 \item{train_na}{Training dataset
 (an array from \code{\link[NetworkToolbox]{convertConnBrainMat}} function)}
@@ -93,6 +111,8 @@ Uses \code{\link[qgraph]{qgraph}} to plot connectivity
 between the networks as a network.
 Defaults to \code{FALSE}.
 Set to \code{TRUE} to visualize the networks}
+
+\item{...}{Additional arguments to be passed from a \code{cpm} function}
 }
 \value{
 \code{cpmIV} and \code{cpmEV}:
@@ -108,6 +128,10 @@ mean absolute error (\code{mae}), root mean square error (\code{rmse})}
 \item{negMask}{Negative connectivity for input in
 \href{https://bioimagesuiteweb.github.io/webapp/connviewer.html}{BioImage Suite Connectivity Viewer}}
 
+\code{cpmIVperm}:
+
+Returns a matrix containing \emph{p}-values for positive and negative prediction models 
+
 \code{cpmFP}:
 
 Returns a matrix containing the percentage
@@ -119,7 +143,7 @@ Returns plot of connectivity differences between the
 positive and negative masks
 }
 \description{
-Suite of functions for Connectome Predictive Modeling (CPM).
+Suite of functions for Connectome-based Predictive Modeling (CPM).
 \strong{See and cite Finn et al., 2015; Rosenberg et al., 2016; Shen et al., 2017}
 
 \itemize{
@@ -134,6 +158,12 @@ statistic being regressed on the connectome model. The left out participants con
 used with the linear regression weights to compute their predicted behavioral score. This is repeated
 for every participant. The predicted scores are correlated with their observed score. Significant values
 suggest that the connectome is related to the behavioral statistic}
+
+\item{\code{cpmIVperm}}
+
+{Performs a permutation test of the results obtained by \code{cpmIV}. The permutation test quantifies
+whether the results obtained by the original \code{cpmIV} are significantly different than a random model
+(see Shen et al., 2017)}
 
 \item{\code{cpmEV}}
 
@@ -165,11 +195,19 @@ behav <- behavOpen
 
 \dontrun{
 
-# Download associated brain data
-https://drive.google.com/file/d/1ugwi7nRrlHQYuGPzEB4wYzsizFrIMvKR/view
+# Create path to temporary file
+temp <- tempfile()
 
-# Load brain data
-load("restOpen.rda")
+# Download to temporary file
+googledrive::drive_download(
+paste("https://drive.google.com/file/d/",
+"1T7_mComB6HPxJxZZwwsLLSYHXsOuvOBt",
+"/view?usp=sharing", sep = ""),
+path = temp
+)
+
+# Load resting state brain data
+load(temp)
 
 # Run cpmIV
 res <- cpmIV(neuralarray = restOpen, bstat = behav, cores = 4)

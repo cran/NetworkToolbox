@@ -49,6 +49,9 @@
 #Participation Coefficient----
 participation <- function (A, comm = c("walktrap","louvain"))
 {
+    #make sure its a matrix
+    A <- as.matrix(A)
+    
     #nodes
     n <- ncol(A)
     
@@ -60,14 +63,27 @@ participation <- function (A, comm = c("walktrap","louvain"))
     {comm<-"walktrap"
     }else{comm<-comm}
     
-    if(is.numeric(comm))
-    {facts <- comm
-    }else{
-        if(comm=="walktrap")
-        {facts <- igraph::walktrap.community(convert2igraph(A))$membership
-        }else if(comm=="louvain")
-        {facts <- louvain(A)$community}
-    }
+    #check if comm is character
+    if(is.character(comm))
+    {
+        if(length(comm) == 1)
+        {
+            facts <- switch(comm,
+                            walktrap = suppressWarnings(igraph::walktrap.community(convert2igraph(A))$membership),
+                            louvain = suppressWarnings(louvain(A)$community)
+            )
+        }else{
+            
+            uni <- unique(comm)
+            
+            facts <- comm
+            
+            for(i in 1:length(uni))
+            {facts[which(facts==uni[i])] <- i}
+            
+        }
+        
+    }else{facts <- comm}
     
     #participation coefficient
     pcoef <- function (A, facts)
@@ -77,7 +93,12 @@ participation <- function (A, comm = c("walktrap","louvain"))
         Kc2 <- vector(mode="numeric",length=n)  
         
         for(i in 1:max(Gc))
-        {Kc2 <- Kc2 + colSums(A*(Gc==i))^2} #strength within communities squared
+        {
+            #strength within communities squared
+            if(is.vector(A*(Gc==i)))
+            {Kc2 <- Kc2 + sum(A*(Gc==i))^2
+            }else{Kc2 <- Kc2 + colSums(A*(Gc==i))^2}
+        } 
         
         ones <- vector(mode="numeric",length=n) + 1
         

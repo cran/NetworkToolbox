@@ -1,4 +1,4 @@
-#' Connectome Predictive Modeling
+#' @title Connectome-based Predictive Modeling
 #' 
 #' @name cpm
 #'
@@ -7,9 +7,10 @@
 #' cpmFP
 #' cpmFPperm
 #' cpmIV
+#' cpmIVperm
 #' cpmPlot
 #' 
-#' @description Suite of functions for Connectome Predictive Modeling (CPM).
+#' @description Suite of functions for Connectome-based Predictive Modeling (CPM).
 #' \strong{See and cite Finn et al., 2015; Rosenberg et al., 2016; Shen et al., 2017}
 #' 
 #' \itemize{
@@ -24,6 +25,12 @@
 #' used with the linear regression weights to compute their predicted behavioral score. This is repeated
 #' for every participant. The predicted scores are correlated with their observed score. Significant values
 #' suggest that the connectome is related to the behavioral statistic}
+#' 
+#' \item{\code{cpmIVperm}}
+#'
+#' {Performs a permutation test of the results obtained by \code{cpmIV}. The permutation test quantifies
+#' whether the results obtained by the original \code{cpmIV} are significantly different than a random model
+#' (see Shen et al., 2017)}
 #' 
 #' \item{\code{cpmEV}}
 #' 
@@ -50,10 +57,13 @@
 #' }
 #' 
 #' @usage
-#' cpmIV(neuralarray, bstat, covar, thresh = .01, groups = NULL,
+#' cpmIV(neuralarray, bstat, kfolds, covar, thresh = .01,
+#'       connections = c("separate", "overall"), groups = NULL,
 #'       method = c("mean", "sum"), model = c("linear","quadratic","cubic"),
 #'       corr = c("pearson","spearman"), nEdges, 
-#'       standardize = FALSE, cores, progBar = TRUE)
+#'       standardize = FALSE, cores, progBar = TRUE, plots = TRUE)
+#'       
+#' cpmIVperm(iter = 1000, ...)
 #'       
 #' cpmEV(train_na, train_b, valid_na, valid_b, thresh = .01,
 #'       overlap = FALSE, progBar = TRUE)
@@ -71,8 +81,18 @@
 #' @param covar Covariates to be included in predicting relevant edges (\strong{time consuming}).
 #' \strong{Must} be input as a \code{list()} (see examples)
 #' 
+#' @param kfolds Numeric.
+#' Number of \emph{k}-fold validation samples.
+#' Defaults to the number of participants in the sample (i.e., \emph{n}),
+#' which is also known as leave-one-out validation.
+#' Recommended folds are \code{5} and \code{10}
+#' 
 #' @param thresh Sets an \eqn{\alpha} threshold for edge weights to be retained.
 #' Defaults to \code{.01}
+#' 
+#' @param connections Character.
+#' Should positive and negative correlations be separated or used together?
+#' Defaults to \code{"separate"}
 #' 
 #' @param groups Allows grouping variables to be used for plotting points.
 #' \strong{Must} be a vector.
@@ -102,6 +122,10 @@
 #' @param progBar Should progress bar be displayed?
 #' Defaults to \code{TRUE}.
 #' Set to \code{FALSE} for no progress bar
+#' 
+#' @param plots Should plots be plotted?
+#' Defaults to \code{TRUE}.
+#' Set to \code{FALSE} to hide plots
 #' 
 #' @param train_na Training dataset
 #' (an array from \code{\link[NetworkToolbox]{convertConnBrainMat}} function)
@@ -134,6 +158,8 @@
 #' Defaults to \code{FALSE}.
 #' Set to \code{TRUE} to visualize the networks
 #' 
+#' @param ... Additional arguments to be passed from a \code{cpm} function
+#' 
 #' @return
 #' 
 #' \code{cpmIV} and \code{cpmEV}:
@@ -148,6 +174,10 @@
 #' 
 #' \item{negMask}{Negative connectivity for input in
 #' \href{https://bioimagesuiteweb.github.io/webapp/connviewer.html}{BioImage Suite Connectivity Viewer}}
+#' 
+#' \code{cpmIVperm}:
+#' 
+#' Returns a matrix containing \emph{p}-values for positive and negative prediction models 
 #' 
 #' \code{cpmFP}:
 #' 
@@ -186,11 +216,19 @@
 #' 
 #' \dontrun{
 #' 
-#' # Download associated brain data
-#' https://drive.google.com/file/d/1ugwi7nRrlHQYuGPzEB4wYzsizFrIMvKR/view
+#' # Create path to temporary file
+#' temp <- tempfile()
 #' 
-#' # Load brain data
-#' load("restOpen.rda")
+#' # Download to temporary file
+#' googledrive::drive_download(
+#' paste("https://drive.google.com/file/d/",
+#' "1T7_mComB6HPxJxZZwwsLLSYHXsOuvOBt",
+#' "/view?usp=sharing", sep = ""),
+#' path = temp
+#' )
+#' 
+#' # Load resting state brain data
+#' load(temp)
 #' 
 #' # Run cpmIV
 #' res <- cpmIV(neuralarray = restOpen, bstat = behav, cores = 4)
@@ -211,11 +249,14 @@
 #' @export
 #CPM Functions----
 #CPM Internal Validation----
-cpmIV <- function (neuralarray, bstat, covar, thresh = .01,
+# Updated 10.09.2020
+cpmIV <- function (neuralarray, bstat, kfolds = dim(neuralarray)[3], covar, thresh = .01,
+                   connections = c("separate", "overall"),
                    groups = NULL, method = c("mean", "sum"),
                    model = c("linear","quadratic","cubic"),
                    corr = c("pearson","spearman"), nEdges, 
-                   standardize = FALSE, cores, progBar = TRUE)
+                   standardize = FALSE, cores, progBar = TRUE,
+                   plots = TRUE)
 {
     ####################################
     #### MISSING ARGUMENTS HANDLING ####
@@ -242,356 +283,144 @@ cpmIV <- function (neuralarray, bstat, covar, thresh = .01,
     }else if(!is.list(covar))
     {stop("Covariates vectors must be input as a list: list()")}
     
+    if(missing(connections)){
+        connections <- "separate"
+    }else{connections <- match.arg(connections)}
+    
     ####################################
     #### MISSING ARGUMENTS HANDLING ####
     ####################################
     
-    #functions list
-    critical.r <- function(iter, a)
+    if(connections == "separate")
+    {return(cpmIV.separate(neuralarray, bstat, kfolds = kfolds, covar, thresh = thresh,
+                           groups = groups, method = method,
+                           model = model, corr = corr, nEdges = nEdges, 
+                           standardize = standardize, cores = cores,
+                           progBar = progBar, plots = plots))
+    }else{return(cpmIV.overall(neuralarray, bstat, kfolds = kfolds, covar, thresh = thresh,
+                                groups = groups, method = method,
+                                model = model, corr = corr, nEdges = nEdges, 
+                                standardize = standardize, cores = cores,
+                                progBar = progBar, plots = plots))}
+}
+#----
+
+# CPM Internal Validation (Permutation)----
+#' @export
+cpmIVperm <- function(iter = 1000, ...)
+{
+    # List input for ...
+    input <-  list(...)
+    
+    # Behavioral statistic is necessary
+    bstat <- input$bstat
+    
+    # Check for number of cores
+    if(!"cores" %in% names(input))
+    {input$cores <- parallel::detectCores() / 2}
+    
+    # Adjust progress bar based on covariates
+    if(!"covar" %in% names(input))
+    {input$progBar <- FALSE
+    }else{input$progBar <- TRUE}
+    
+    # Make sure plots are FALSE
+    input$plots <- FALSE
+    
+    # Run original analysis
+    orig <- do.call(cpmIV, input)
+    if(orig$connections == "separate")
     {
-        df <- iter - 2
-        critical.t <- qt( a/2, df, lower.tail = F )
-        cvr <- sqrt( (critical.t^2) / ( (critical.t^2) + df ) )
-        return(cvr)
+        orig.pos <- orig$results["positive", "r"]
+        orig.neg <- orig$results["negative", "r"]
+    }else{orig.over <- orig$results["overall", "r"]}
+    
+    # Shuffle participant scores and insert into list
+    perm.list <- vector("list", length = (iter-1))
+    
+    # Check for covariates (progress bar)
+    if(!"covar" %in% names(input))
+    {pb <- txtProgressBar(min = 0, max = (iter-1), style = 3)}
+    
+    # Initialize i
+    i <- 1
+    
+    # Loop through cpmIV
+    while(i != (iter-1))
+    {
+        # Check for covariates (progress bar)
+        if("covar" %in% names(input))
+        {message(paste(i, "of", iter, "iterations complete."))}
+        
+        # Permutate behavioral statistic
+        input$bstat <- sample(bstat, length(bstat))
+        
+        # Run cpmIV (error catch)
+        perm.list[[i]] <- try(
+            do.call(cpmIV, input)
+        )
+        
+        # Re-run if error; otherwise, proceed
+        i <- ifelse(class(perm.list) == "try-error", i, (i+1))
+        
+        # Check for covariates (progress bar)
+        if(!"covar" %in% names(input))
+        {setTxtProgressBar(pb, i)}
     }
     
-    bstat<-as.vector(bstat)
-    if(standardize)
-    {bstat<-scale(bstat)}
-    
-    #number of subjects
-    no_sub<-dim(neuralarray)[3]
-    #number of nodes
-    no_node<-ncol(neuralarray)
-    
-    #initialize positive and negative behavior stats
-    behav_pred_pos<-matrix(0,nrow=no_sub,ncol=1)
-    behav_pred_neg<-matrix(0,nrow=no_sub,ncol=1)
-    
-    if(is.list(covar))
-    {
-        cvars<-do.call(cbind,covar,1)
-        cvars<-scale(cvars)
-    }
-    
-    pos_array <- array(0,dim=c(nrow=no_node,ncol=no_node,no_sub))
-    neg_array <- array(0,dim=c(nrow=no_node,ncol=no_node,no_sub))
-    
-    
-    #perform leave-out analysis
-    if(progBar)
-    {pb <- txtProgressBar(max=no_sub, style = 3)}
-    
-    for(leftout in 1:no_sub)
-    {
-        train_mats<-neuralarray
-        train_mats<-train_mats[,,-leftout]
-        ##initialize train vectors
-        #vector length
-        vctrow<-ncol(neuralarray)^2
-        vctcol<-length(train_mats)/nrow(train_mats)/ncol(train_mats)
-        train_vcts<-matrix(0,nrow=vctrow,ncol=vctcol)
-        for(i in 1:vctcol)
-        {train_vcts[,i]<-as.vector(train_mats[,,i])}
-        
-        #behavior stats
-        train_behav<-bstat
-        train_behav<-train_behav[-leftout]
-        
-        #correlate edges with behavior
-        if(nrow(train_vcts)!=(no_sub-1))
-        {train_vcts<-t(train_vcts)}
-        
-        rmat<-vector(mode="numeric",length=ncol(train_vcts))
-        pmat<-vector(mode="numeric",length=ncol(train_vcts))
-        
-        if(is.list(covar))
-        {
-            cl <- parallel::makeCluster(cores)
-            doParallel::registerDoParallel(cl)
-            
-            pcorr<-suppressWarnings(
-                foreach::foreach(i=1:ncol(train_vcts))%dopar%
-                    {
-                        temp<-cbind(train_vcts[,i],train_behav,cvars[-leftout,])
-                        ppcor::pcor.test(temp[,1],temp[,2],temp[,c(seq(from=3,to=2+ncol(cvars)))])
-                    }
-            )
-            parallel::stopCluster(cl)
-            
-            for(i in 1:length(pcorr))
-            {
-                rmat[i]<-pcorr[[i]]$estimate
-                pmat[i]<-pcorr[[i]]$p.value
-            }
-            rmat<-ifelse(is.na(rmat),0,rmat)
-            pmat<-ifelse(is.na(pmat),0,pmat)
-        }else{rmat<-suppressWarnings(cor(train_vcts,train_behav,method=corr))}
-        
-        r_mat<-matrix(rmat,nrow=no_node,ncol=no_node)
-        
-        #set threshold and define masks
-        pos_mask<-matrix(0,nrow=no_node,ncol=no_node)
-        neg_mask<-matrix(0,nrow=no_node,ncol=no_node)
-        
-        if(!is.list(covar))
-        {
-            #critical r-value
-            cvr<-critical.r((no_sub-1),thresh)
-            pos_edges<-which(r_mat>=cvr)
-            neg_edges<-which(r_mat<=(-cvr))
-        }else
-        {
-            p_mat<-matrix(pmat,nrow=no_node,ncol=no_node)
-            sig<-ifelse(p_mat<=thresh,r_mat,0)
-            pos_edges<-which(r_mat>0&sig!=0)
-            neg_edges<-which(r_mat<0&sig!=0)
-        }
-        
-        
-        pos_mask[pos_edges]<-1
-        neg_mask[neg_edges]<-1
-        
-        pos_array[,,leftout] <- pos_mask
-        neg_array[,,leftout] <- neg_mask
-        
-        #get sum of all edges in TRAIN subs (divide, if symmetric matrices)
-        train_sumpos<-matrix(0,nrow=(no_sub-1),ncol=1)
-        train_sumneg<-matrix(0,nrow=(no_sub-1),ncol=1)
-        
-        for(ss in 1:nrow(train_sumpos))
-        {
-            if(method=="sum")
-            {
-                train_sumpos[ss]<-sum(train_mats[,,ss]*pos_mask)/2
-                train_sumneg[ss]<-sum(train_mats[,,ss]*neg_mask)/2
-            }else if(method=="mean")
-            {
-                train_sumpos[ss]<-mean(train_mats[,,ss]*pos_mask)/2
-                train_sumneg[ss]<-mean(train_mats[,,ss]*neg_mask)/2
-            }
-        }
-        
-        #generate regression formula with covariates
-        #if(is.list(covar))
-        #{cvar<-cvars[-leftout,]}
-        
-        #regressions----
-        
-        #build model on TRAIN subs
-        if(model=="linear")
-        {
-            fit_pos<-coef(lm(train_behav~train_sumpos))
-            fit_neg<-coef(lm(train_behav~train_sumneg))
-        }else if(model=="quadratic")
-        {
-            quad_pos<-train_sumpos^2
-            quad_neg<-train_sumneg^2
-            
-            fit_pos<-coef(lm(train_behav~train_sumpos+quad_pos))
-            fit_neg<-coef(lm(train_behav~train_sumneg+quad_neg))
-        }else if(model=="cubic")
-        {
-            cube_pos<-train_sumpos^3
-            cube_neg<-train_sumneg^3
-            
-            quad_pos<-train_sumpos^2
-            quad_neg<-train_sumneg^2
-            
-            fit_pos<-coef(lm(train_behav~train_sumpos+quad_pos+cube_pos))
-            fit_neg<-coef(lm(train_behav~train_sumneg+quad_neg+cube_neg))
-        }
-        
-        #run model on TEST sub
-        test_mat<-neuralarray[,,leftout]
-        if(method=="sum")
-        {
-            test_sumpos<-sum(test_mat*pos_mask)/2
-            test_sumneg<-sum(test_mat*neg_mask)/2
-        }else if(method=="mean")
-        {
-            test_sumpos<-mean(test_mat*pos_mask)/2
-            test_sumneg<-mean(test_mat*neg_mask)/2
-        }
-        
-        if(model=="linear")
-        {
-            behav_pred_pos[leftout]<-fit_pos[2]*test_sumpos+fit_pos[1]
-            behav_pred_neg[leftout]<-fit_neg[2]*test_sumneg+fit_neg[1]
-        }else if(model=="quadratic")
-        {
-            quad_post<-test_sumpos^2
-            quad_negt<-test_sumneg^2
-            
-            behav_pred_pos[leftout]<-fit_pos[3]*quad_post+fit_pos[2]*test_sumpos+fit_pos[1]
-            behav_pred_neg[leftout]<-fit_neg[3]*quad_negt+fit_neg[2]*test_sumneg+fit_neg[1]
-        }else if(model=="cubic")
-        {
-            cube_post<-test_sumpos^3
-            cube_negt<-test_sumneg^3
-            
-            quad_post<-test_sumpos^2
-            quad_negt<-test_sumneg^2
-            
-            behav_pred_pos[leftout]<-fit_pos[4]*cube_post+fit_pos[3]*quad_post+fit_pos[2]*test_sumpos+fit_pos[1]
-            behav_pred_neg[leftout]<-fit_neg[4]*cube_negt+fit_neg[3]*quad_negt+fit_neg[2]*test_sumneg+fit_neg[1]
-        }
-        
-        if(progBar)
-        {setTxtProgressBar(pb, leftout)}
-    }
-    if(progBar)
+    # Check for covariates (progress bar)
+    if(!"covar" %in% names(input))
     {close(pb)}
     
-    pos_mat <- matrix(0, nrow = no_node, ncol = no_node)
-    neg_mat <- matrix(0, nrow = no_node, ncol = no_node)
-    
-    for(i in 1:no_node)
-        for(j in 1:no_node)
-        {
-            pos_mat[i,j] <- sum(pos_array[i,j,])
-            neg_mat[i,j] <- sum(neg_array[i,j,])
-        }
-    
-    posmask <- ifelse(pos_mat>=nEdges,1,0)
-    negmask <- ifelse(neg_mat>=nEdges,1,0)
-    
-    if(!is.null(colnames(neuralarray)))
+    if(orig$connections == "separate")
     {
-        colnames(posmask) <- colnames(neuralarray)
-        row.names(posmask) <- colnames(posmask)
-        colnames(negmask) <- colnames(neuralarray)
-        row.names(negmask) <- colnames(negmask)
-    }
-    
-    R_pos<-cor(behav_pred_pos,bstat,use="pairwise.complete.obs")
-    P_pos<-cor.test(behav_pred_pos,bstat)$p.value
-    R_neg<-cor(behav_pred_neg,bstat,use="pairwise.complete.obs")
-    P_neg<-cor.test(behav_pred_neg,bstat)$p.value
-    
-    P_pos<-ifelse(round(P_pos,3)!=0,round(P_pos,3),noquote("< .001"))
-    P_neg<-ifelse(round(P_neg,3)!=0,round(P_neg,3),noquote("< .001"))
-    
-    #bstat range
-    lower.bstat <- floor(range(bstat))[1]
-    upper.bstat <- ceiling(range(bstat))[2]
-    text.one <- lower.bstat - (lower.bstat * .20)
-    text.two <- upper.bstat - (upper.bstat * .20)
-    
-    #set up groups
-    if(!is.null(groups))
-    {
-        #group labels
-        labs_groups <- unique(groups)
+        # Obtain positive correlation values
+        pos <- c(orig.pos,
+                 as.numeric(unlist(lapply(perm.list, function(X)
+                 {
+                     X$results["positive", "r"]
+                 })))
+        )
         
-        #number of groups
-        n_groups <- length(labs_groups)
+        # Obtain negative correlation values
+        neg <- c(orig.neg,
+                 as.numeric(unlist(lapply(perm.list, function(X)
+                 {
+                     X$results["negative", "r"]
+                 })))
+        )
         
-        #plot positive
-        dev.new()
-        par(mar=c(5,5,4,2))
-        plot(bstat,behav_pred_pos,xlab="Observed Score\n(Z-score)",ylab="Predicted Score\n(Z-score)",
-             main="Positive Prediction",xlim=c(lower.bstat,upper.bstat),
-             ylim=c(lower.bstat,upper.bstat),pch=c(16,1),col="darkorange2")
-        abline(lm(behav_pred_pos~bstat))
-        if(R_pos>=0)
-        {
-            text(x=text.one,y=text.two,labels = paste("r = ",round(R_pos,3),"\np = ",P_pos))
-            legend("bottomright",legend=labs_groups,col="darkorange2",pch=c(16,1))
-        }else if(R_pos<0)
-        {
-            text(x=text.one,y=text.one,labels = paste("r = ",round(R_pos,3),"\np = ",P_pos))
-            legend("topright",legend=labs_groups,col="darkorange2",pch=c(16,1))
-        }
+        # p-value for positive and negative
+        p.pos <- sum(ifelse(pos >= orig.pos, 1, 0)) / iter
+        p.neg <- sum(ifelse(neg >= orig.neg, 1, 0)) / iter
         
-        #plot negative
-        dev.new()
-        par(mar=c(5,5,4,2))
-        plot(bstat,behav_pred_neg,xlab="Observed Score\n(Z-score)",ylab="Predicted Score\n(Z-score)",
-             main="Negative Prediction",xlim=c(lower.bstat,upper.bstat),
-             ylim=c(lower.bstat,upper.bstat),pch=c(16,1),col="skyblue2")
-        abline(lm(behav_pred_neg~bstat))
-        if(R_neg>=0)
-        {
-            text(x=text.one,y=text.two,labels = paste("r = ",round(R_neg,3),"\np = ",P_neg))
-            legend("bottomright",legend=labs_groups,col="skyblue2",pch=c(16,1))
-        }else if(R_neg<0)
-        {
-            text(x=text.one,y=text.one,labels = paste("r = ",round(R_neg,3),"\np = ",P_neg))
-            legend("topright",legend=labs_groups,col="skyblue2",pch=c(16,1))
-        }
+        # Create p-value matrix
+        ps <- matrix(c(p.pos, p.neg), ncol = 2)
+        row.names(ps) <- "p-value"
+        colnames(ps) <- c("Positive Prediction", "Negative Prediction")
     }else{
-        #plot positive
-        dev.new()
-        par(mar=c(5,5,4,2))
-        plot(bstat,behav_pred_pos,xlab="Observed Score\n(Z-score)",ylab="Predicted Score\n(Z-score)",
-             main="Positive Prediction",xlim=c(lower.bstat,upper.bstat),
-             ylim=c(lower.bstat,upper.bstat),pch=16,col="darkorange2")
-        abline(lm(behav_pred_pos~bstat))
-        if(R_pos>=0)
-        {text(x=text.one,y=text.two,labels = paste("r = ",round(R_pos,3),"\np = ",P_pos))
-        }else if(R_pos<0)
-        {text(x=text.one,y=text.one,labels = paste("r = ",round(R_pos,3),"\np = ",P_pos))}
+        # Obtain positive correlation values
+        over <- c(orig.over,
+                 as.numeric(unlist(lapply(perm.list, function(X)
+                 {
+                     X$results["overall", "r"]
+                 })))
+        )
         
-        #plot negative
-        dev.new()
-        par(mar=c(5,5,4,2))
-        plot(bstat,behav_pred_neg,xlab="Observed Score\n(Z-score)",ylab="Predicted Score\n(Z-score)",
-             main="Negative Prediction",xlim=c(floor(range(bstat))[1],floor(range(bstat))[1]),
-             ylim=c(floor(range(bstat))[1],floor(range(bstat))[1]),pch=16,col="skyblue2")
-        abline(lm(behav_pred_neg~bstat))
-        if(R_neg>=0)
-        {text(x=text.one,y=text.two,labels = paste("r = ",round(R_neg,3),"\np = ",P_neg))
-        }else if(R_neg<0)
-        {text(x=text.one,y=-text.two,labels = paste("r = ",round(R_neg,3),"\np = ",P_neg))}
+        # p-value for positive and negative
+        p.over <- sum(ifelse(over >= orig.over, 1, 0)) / iter
+        
+        # Create p-value matrix
+        ps <- matrix(p.over, ncol = 1)
+        row.names(ps) <- "p-value"
+        colnames(ps) <- c("Overall Prediction")
     }
     
-    bstat<-as.vector(bstat)
-    behav_pred_pos<-as.vector(behav_pred_pos)
-    behav_pred_neg<-as.vector(behav_pred_neg)
-    perror <- vector(mode="numeric",length = length(bstat))
-    nerror <- vector(mode="numeric",length = length(bstat))
-    
-    for(i in 1:length(bstat))
-    {
-        perror[i] <- behav_pred_pos[i]-bstat[i]
-        nerror[i] <- behav_pred_neg[i]-bstat[i]
-        
-        #mae
-        mae_pos<-mean(abs(perror))
-        mae_neg<-mean(abs(nerror))
-        
-        #rmse
-        pos_rmse<-sqrt(mean(perror^2))
-        neg_rmse<-sqrt(mean(nerror^2))
-    }
-    
-    results<-matrix(0,nrow=2,ncol=4)
-    
-    results[1,1]<-round(R_pos,3)
-    results[1,2]<-P_pos
-    results[1,3]<-round(mae_pos,3)
-    results[1,4]<-round(pos_rmse,3)
-    results[2,1]<-round(R_neg,3)
-    results[2,2]<-P_neg
-    results[2,3]<-round(mae_neg,3)
-    results[2,4]<-round(neg_rmse,3)
-    
-    colnames(results)<-c("r","p","mae","rmse")
-    row.names(results)<-c("positive","negative")
-    
-    #Results list
-    res <- list()
-    res$results <- results
-    res$posMask <- posmask
-    res$negMask <- negmask
-    
-    class(res) <- "CPM"
-    
-    return(res)
+    return(ps)
 }
 #----
 #CPM External Validation----
+#' @export
 cpmEV <- function (train_na, train_b, valid_na, valid_b,
                    thresh = .01, overlap = FALSE, progBar = TRUE)
 {
@@ -882,12 +711,13 @@ cpmEV <- function (train_na, train_b, valid_na, valid_b,
     res$posMask <- pos_mask
     res$negMask <- neg_mask
     
-    class(res) <- "CPM"
+    class(res) <- "cpm"
     
     return(res)
 }
 #----
 #CPM Fingerprinting----
+#' @export
 cpmFP <- function (session1, session2, progBar = TRUE)
 {
     count1<-0
@@ -956,7 +786,8 @@ cpmFP <- function (session1, session2, progBar = TRUE)
     return(ident)
 }
 #----
-#CPM Permutation Testing----
+#CPM Fingerprinting (Permutation)----
+#' @export
 cpmFPperm <- function (session1, session2, iter = 1000, progBar = TRUE)
 {
     rate<-matrix(nrow=iter,ncol=4)
@@ -1037,15 +868,19 @@ cpmFPperm <- function (session1, session2, iter = 1000, progBar = TRUE)
 }
 #----
 #Plots for CPM Results----
+#' @export
 cpmPlot <- function (cpm.obj, visual.nets = FALSE)
 {
     # Check if CPM object
-    if(class(cpm.obj) != "CPM")
-    {stop("'cpm.obj' is not a 'CPM' object")}
+    if(class(cpm.obj) != "cpm")
+    {stop("'cpm.obj' is not a 'cpm' object")}
     
     # Masks
-    posmask <- cpm.obj$posMask
-    negmask <- cpm.obj$negMask
+    if(cpm.obj$connections == "separate")
+    {
+        posmask <- cpm.obj$posMask
+        negmask <- cpm.obj$negMask
+    }else{posmask <- cpm.obj$Mask}
     
     # Number of nodes
     n <- ncol(posmask)
@@ -1141,41 +976,50 @@ cpmPlot <- function (cpm.obj, visual.nets = FALSE)
     lobes <- unique(atlasReg)
     
     pos_lobe <- posmask
-    neg_lobe <- negmask
     colnames(pos_lobe) <- atlasReg
-    colnames(neg_lobe) <- atlasReg
-    
     poslobemat <- matrix(0, nrow = length(lobes), ncol = length(lobes))
-    neglobemat <- matrix(0, nrow = length(lobes), ncol = length(lobes))
+    
+    if(cpm.obj$connections == "separate")
+    {
+        neg_lobe <- negmask
+        colnames(neg_lobe) <- atlasReg
+        neglobemat <- matrix(0, nrow = length(lobes), ncol = length(lobes))
+    }
     
     for(i in 1:length(lobes))
         for(j in 1:length(lobes))
         {
             poslobemat[i,j] <- sum(pos_lobe[which(colnames(pos_lobe)==lobes[i]),which(colnames(pos_lobe)==lobes[j])])
-            neglobemat[i,j] <- sum(neg_lobe[which(colnames(neg_lobe)==lobes[i]),which(colnames(neg_lobe)==lobes[j])])
+            if(cpm.obj$connections == "separate")
+            {neglobemat[i,j] <- sum(neg_lobe[which(colnames(neg_lobe)==lobes[i]),which(colnames(neg_lobe)==lobes[j])])}
         }
     
-    ldiffmat <- (poslobemat - neglobemat)
-    
-    colnames(ldiffmat) <- lobes
-    row.names(ldiffmat) <- lobes
     colnames(poslobemat) <- lobes
     row.names(poslobemat) <- lobes
-    colnames(neglobemat) <- lobes
-    row.names(neglobemat) <- lobes
     
-    ldiffmat[upper.tri(ldiffmat)] <- 0
-    
-    llim <- ifelse(abs(min(ldiffmat))>max(ldiffmat),abs(min(ldiffmat)),max(ldiffmat))
-    
-    colo <- colorRampPalette(c("skyblue2","white","darkorange2"))
-    
-    dev.new()
-    corrplot::corrplot(ldiffmat,is.corr=FALSE,method="color",
-                       tl.col="black",col = colo(100),na.label="square",
-                       na.label.col = "white",addgrid.col="black",
-                       title=paste("Difference in the Number of Edges\nin",lobe.title,sep=" "),
-                       mar=c(0,0,4,0),cl.length=3,cl.pos="b",cl.lim=c(-llim,llim))
+    if(cpm.obj$connections == "separate")
+    {
+        ldiffmat <- (poslobemat - neglobemat)
+        
+        colnames(ldiffmat) <- lobes
+        row.names(ldiffmat) <- lobes
+        
+        colnames(neglobemat) <- lobes
+        row.names(neglobemat) <- lobes
+        
+        ldiffmat[upper.tri(ldiffmat)] <- 0
+        
+        llim <- ifelse(abs(min(ldiffmat))>max(ldiffmat),abs(min(ldiffmat)),max(ldiffmat))
+        
+        colo <- colorRampPalette(c("skyblue2","white","darkorange2"))
+        
+        dev.new()
+        corrplot::corrplot(ldiffmat,is.corr=FALSE,method="color",
+                           tl.col="black",col = colo(100),na.label="square",
+                           na.label.col = "white",addgrid.col="black",
+                           title=paste("Difference in the Number of Edges\nin",lobe.title,sep=" "),
+                           mar=c(0,0,4,0),cl.length=3,cl.pos="b",cl.lim=c(-llim,llim))
+    }
     
     
     ############################
@@ -1186,66 +1030,90 @@ cpmPlot <- function (cpm.obj, visual.nets = FALSE)
     nets <- unique(atlasNet)
     
     pos_nets <- posmask
-    neg_nets <- negmask
-    
     colnames(pos_nets) <- atlasNet
-    colnames(neg_nets) <- atlasNet
-    
     posnetmat <- matrix(0,nrow=length(nets),ncol=length(nets))
-    negnetmat <- matrix(0,nrow=length(nets),ncol=length(nets))
+    
+    if(cpm.obj$connections == "separate")
+    {
+        neg_nets <- negmask
+        colnames(neg_nets) <- atlasNet
+        negnetmat <- matrix(0,nrow=length(nets),ncol=length(nets))
+    }
     
     for(i in 1:length(nets))
         for(j in 1:length(nets))
         {
             posnetmat[i,j] <- sum(pos_nets[which(colnames(pos_nets)==nets[i]),which(colnames(pos_nets)==nets[j])])
-            negnetmat[i,j] <- sum(neg_nets[which(colnames(neg_nets)==nets[i]),which(colnames(neg_nets)==nets[j])])
+            if(cpm.obj$connections == "separate")
+            {negnetmat[i,j] <- sum(neg_nets[which(colnames(neg_nets)==nets[i]),which(colnames(neg_nets)==nets[j])])}
         }
     
-    diffmat <- (posnetmat-negnetmat)
-    
-    colnames(diffmat) <- nets
-    row.names(diffmat) <- nets
     colnames(posnetmat) <- nets
     row.names(posnetmat) <- nets
-    colnames(negnetmat) <- nets
-    row.names(negnetmat) <- nets
     
-    diffmat[upper.tri(diffmat)] <- 0
+    if(cpm.obj$connections == "separate")
+    {
+        diffmat <- (posnetmat-negnetmat)
+        
+        colnames(diffmat) <- nets
+        row.names(diffmat) <- nets
+        
+        colnames(negnetmat) <- nets
+        row.names(negnetmat) <- nets
+        
+        diffmat[upper.tri(diffmat)] <- 0
+        
+        dlim <- ifelse(abs(min(diffmat))>max(diffmat),abs(min(diffmat)),max(diffmat))
+        
+        colo <- colorRampPalette(c("skyblue2","white","darkorange2"))
+        
+        dev.new()
+        corrplot::corrplot(diffmat,is.corr=FALSE,method="color",
+                           tl.col="black",col = colo(100),na.label="square",
+                           na.label.col = "white",addgrid.col="black",
+                           title=paste("Difference in the Number of Edges\nin",con.title,sep=" "),
+                           mar=c(0,0,4,0),cl.length=3,cl.pos="b",cl.lim=c(-dlim,dlim))
+    }
     
-    dlim <- ifelse(abs(min(diffmat))>max(diffmat),abs(min(diffmat)),max(diffmat))
-    
-    colo <- colorRampPalette(c("skyblue2","white","darkorange2"))
-    
-    dev.new()
-    corrplot::corrplot(diffmat,is.corr=FALSE,method="color",
-                       tl.col="black",col = colo(100),na.label="square",
-                       na.label.col = "white",addgrid.col="black",
-                       title=paste("Difference in the Number of Edges\nin",con.title,sep=" "),
-                       mar=c(0,0,4,0),cl.length=3,cl.pos="b",cl.lim=c(-dlim,dlim))
     
     if(visual.nets)
     {
-        dev.new()
-        qgraph::qgraph(posnetmat,title=paste("Positive",con.title,"Connectivity",sep=" "),
-                       edge.color="darkorange2")
-        dev.new()
-        qgraph::qgraph(negnetmat,title=paste("Negative",con.title,"Connectivity",sep=" "),
-                       edge.color="skyblue2")
-        dev.new()
-        diffmat <- (diffmat + t(diffmat))/2
-        qgraph::qgraph(diffmat,title=paste("Difference",con.title,"Connectivity",sep=" "),
-                       posCol="darkorange2",negCol="skyblue2")
-        
-        dev.new()
-        qgraph::qgraph(poslobemat,title=paste("Positive",lobe.title,"Connectivity",sep=" "),
-                       edge.color="darkorange2")
-        dev.new()
-        qgraph::qgraph(neglobemat,title=paste("Negative",lobe.title,"Connectivity",sep=" "),
-                       edge.color="skyblue2")
-        dev.new()
-        ldiffmat <- (ldiffmat + t(ldiffmat))/2
-        qgraph::qgraph(ldiffmat,title=paste("Difference",lobe.title,"Connectivity",sep=" "),
-                       posCol="darkorange2",negCol="skyblue2")
+        if(cpm.obj$connections == "separate")
+        {
+            
+            dev.new()
+            qgraph::qgraph(posnetmat,title=paste("Positive",con.title,"Connectivity",sep=" "),
+                           edge.color="darkorange2")
+            dev.new()
+            qgraph::qgraph(negnetmat,title=paste("Negative",con.title,"Connectivity",sep=" "),
+                           edge.color="skyblue2")
+            dev.new()
+            diffmat <- (diffmat + t(diffmat))/2
+            qgraph::qgraph(diffmat,title=paste("Difference",con.title,"Connectivity",sep=" "),
+                           posCol="darkorange2",negCol="skyblue2")
+            
+            dev.new()
+            qgraph::qgraph(poslobemat,title=paste("Positive",lobe.title,"Connectivity",sep=" "),
+                           edge.color="darkorange2")
+            dev.new()
+            qgraph::qgraph(neglobemat,title=paste("Negative",lobe.title,"Connectivity",sep=" "),
+                           edge.color="skyblue2")
+            dev.new()
+            ldiffmat <- (ldiffmat + t(ldiffmat))/2
+            qgraph::qgraph(ldiffmat,title=paste("Difference",lobe.title,"Connectivity",sep=" "),
+                           posCol="darkorange2",negCol="skyblue2")
+            
+        }else{
+            
+            dev.new()
+            qgraph::qgraph(posnetmat,title=paste("Overall",con.title,"Connectivity",sep=" "),
+                           edge.color="darkorange2")
+            
+            dev.new()
+            qgraph::qgraph(poslobemat,title=paste("Overall",lobe.title,"Connectivity",sep=" "),
+                           edge.color="darkorange2")
+            
+        }
     }
 }
 #----

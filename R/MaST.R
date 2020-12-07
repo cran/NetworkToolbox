@@ -29,6 +29,7 @@
 #' 
 #' @export
 #Maximum Spanning Tree----
+# Updated 07.12.2020
 MaST <- function (data, normal = TRUE,
                   na.data = c("pairwise","listwise","fiml","none"),
                   depend = FALSE)
@@ -157,14 +158,24 @@ MaST <- function (data, normal = TRUE,
     }else{L[,2]<-S[,3]
     L[,3]<-S[,2]
     K<-rbind(S,L)}
-    x<-as.matrix(Matrix::sparseMatrix(i=K[,2],j=K[,3],x=K[,1]))
+    x <- matrix(0, nrow = ncol(cormat), ncol = ncol(cormat))
+    
+    for(i in 1:nrow(K))
+    {
+        x[K[i,2], K[i,3]] <- 1
+        x[K[i,3], K[i,2]] <- 1
+    }
+    
     diag(x)<-1
-    x<-as.matrix(x)
-    x<-ifelse(x!=0,cormat,0)
-    x<-as.data.frame(x)
+    
+    for(r in 1:nrow(x))
+        for(z in 1:ncol(x))
+        {if(x[r,z]==1){x[r,z]<-corma[r,z]}}
+    
     colnames(x)<-colnames(data)
-    row.names(x)<-colnames(data)
-    x<-as.matrix(x)
+    x <- as.data.frame(x)
+    row.names(x)<-colnames(x)
+    x <- as.matrix(x)
     return(x)
 }
 #----

@@ -47,6 +47,9 @@
 #Diversity Coefficient----
 diversity <- function (A, comm = c("walktrap","louvain"))
 {
+    #convert to matrix
+    A <- as.matrix(A)
+    
     #nodes
     n <- ncol(A)
     
@@ -58,14 +61,28 @@ diversity <- function (A, comm = c("walktrap","louvain"))
     {comm<-"walktrap"
     }else{comm<-comm}
     
-    if(is.numeric(comm))
-    {facts <- comm
-    }else{
-        if(comm=="walktrap")
-        {facts <- igraph::walktrap.community(convert2igraph(A))$membership
-        }else if(comm=="louvain")
-        {facts <- louvain(A)$community}
-    }
+    
+    #check if comm is character
+    if(is.character(comm))
+    {
+        if(length(comm) == 1)
+        {
+            facts <- switch(comm,
+                            walktrap = suppressWarnings(igraph::walktrap.community(convert2igraph(A))$membership),
+                            louvain = suppressWarnings(louvain(A)$community)
+            )
+        }else{
+            
+            uni <- unique(comm)
+            
+            facts <- comm
+            
+            for(i in 1:length(uni))
+            {facts[which(facts==uni[i])] <- i}
+            
+        }
+        
+    }else{facts <- comm}
     
     #number of communities
     m <- max(facts)
@@ -76,11 +93,16 @@ diversity <- function (A, comm = c("walktrap","louvain"))
         Snm <- matrix(0,nrow=n,ncol=m)
         
         for(i in 1:m)
-        {Snm[,i] <- rowSums(A[,which(facts==i)])}
+        {
+            if(is.vector(A[,which(facts==i)]))
+            {Snm[,i] <- sum(A[,which(facts==i)])
+            }else{Snm[,i] <- rowSums(A[,which(facts==i)])}
+        }
         
         pnm <- Snm/(S*matrix(1,nrow=n,ncol=m))
         pnm[is.na(pnm)]<-0
         pnm[!pnm]<-1
+        
         H <- -rowSums(pnm*log(pnm))/log(m)
         
         return(H)
