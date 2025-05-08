@@ -19,8 +19,8 @@
 #' \item{negative}{Participation coefficient with only negative sign}
 #' 
 #' @details 
-#' Values closer to 1 suggest greater within-community connectivity and 
-#' values closer to 0 suggest greater between-community connectivity
+#' Values closer to 0 suggest greater within-community connectivity and 
+#' values closer to 1 suggest greater between-community connectivity
 #' 
 #' @examples
 #' #theoretical factors
@@ -47,6 +47,7 @@
 #' 
 #' @export
 #Participation Coefficient----
+# Updated 19.06.2022
 participation <- function (A, comm = c("walktrap","louvain"))
 {
     #make sure its a matrix
@@ -64,8 +65,8 @@ participation <- function (A, comm = c("walktrap","louvain"))
     }else{comm<-comm}
     
     #check if comm is character
-    if(is.character(comm))
-    {
+    if(is.character(comm)){
+      
         if(length(comm) == 1)
         {
             facts <- switch(comm,
@@ -85,15 +86,18 @@ participation <- function (A, comm = c("walktrap","louvain"))
         
     }else{facts <- comm}
     
+    #ensure communities are numeric
+    facts <- as.numeric(facts)
+    
     #participation coefficient
-    pcoef <- function (A, facts)
-    {
+    pcoef <- function (A, facts){
+      
         k <- colSums(A) #strength
         Gc <- facts #communities
         Kc2 <- vector(mode="numeric",length=n)  
         
-        for(i in 1:max(Gc))
-        {
+        for(i in 1:max(Gc)){
+          
             #strength within communities squared
             if(is.vector(A*(Gc==i)))
             {Kc2 <- Kc2 + sum(A*(Gc==i))^2
@@ -109,16 +113,16 @@ participation <- function (A, comm = c("walktrap","louvain"))
         return(P)
     }
     
-    overall <- 1- pcoef(A, facts) #overall participation coefficient
+    overall <- pcoef(A, facts) #overall participation coefficient
     
     #signed participation coefficient
     poswei <- ifelse(A>=0,A,0) #positive weights
     negwei <- ifelse(A<=0,A,0) #negative weights
     
-    pos <- 1 - pcoef(poswei, facts) #positive  participation coefficient
+    pos <- pcoef(poswei, facts) #positive  participation coefficient
     if(all(pos==1))
     {pos<-1-pos}
-    neg <- 1 - pcoef(negwei, facts) #negative participation coefficient
+    neg <- pcoef(negwei, facts) #negative participation coefficient
     if(all(neg==1))
     {neg<-1-neg}
     
