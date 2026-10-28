@@ -34,10 +34,12 @@ ECO <- function (data, directed = FALSE)
     if(directed)
     {
         numcon<-3*n
-        ind<-which(C!=0)
-    }else{C<-upper.tri(C,diag=TRUE)
+        C<-C!=0
+        diag(C)<-FALSE
+        ind<-which(C)
+    }else{C<-upper.tri(C)
     numcon<-1.5*n
-    ind<-which(upper.tri(C,diag=TRUE)!=0)}
+    ind<-which(C)}
     
     S<-ifelse(C==1,S,0)
     
@@ -55,12 +57,15 @@ ECO <- function (data, directed = FALSE)
     y<-ind
     h<-cbind(ind,S[ind])
     sorind<-h[order(-h[,2]),]
-    C[sorind[(numcon+1):nrow(sorind),1]]<-0
+    if(numcon<nrow(sorind))
+    {C[sorind[(floor(numcon)+1):nrow(sorind),1]]<-0}
     
     if(directed)
-    {W<-C}else{W<-C+t(C)
-    diag(W)<-1}
-    J<-G+t(G)
+    {W<-C}else{W<-C+t(C)}
+    diag(W)<-1
+    if(directed)
+    {J<-G
+    }else{J<-G+t(G)}
     diag(J)<-1
     W<-ifelse(W!=0,J,0)
     W<-as.data.frame(W)

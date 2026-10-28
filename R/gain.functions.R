@@ -2,10 +2,7 @@
 #'
 #' @name gain.functions
 #'
-#' @aliases
-#' gfcnv_logdet
-#' gfcnv_logdet_val
-#' gdcnv_lmfit
+#' @aliases gfcnv_logdet gfcnv_logdet_val gdcnv_lmfit
 #'
 #' @description These functions maximize a gain criterion
 #' for adding a node to a clique (and the larger network).
@@ -125,7 +122,7 @@ gfcnv_logdet <- function(data, clique_id, cl, excl_nodes, ctreeControl)
     # the output is dataframe with as many rows as the size of excl_nodes
     # structure score in the dataframe is for future uses.
     retval <- data.frame(clique_id = rep(clique_id, times = length(excl_nodes)),
-                         nodes = excl_nodes,
+                         node = excl_nodes,
                          structure_score = 0,
                          gain = -Inf)
 
